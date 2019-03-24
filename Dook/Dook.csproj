@@ -8,7 +8,7 @@
     <PackageTags>objectmapper;sql;linq</PackageTags>
     <!-- <PackageIconUrl>https://raw.githubusercontent.com/jbogard/MediatR/master/assets/logo/gradient_128x128.png</PackageIconUrl> -->
     <PackageProjectUrl>https://github.com/LincoNanco/Dook</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/LincoNanco/Dook/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://github.com/LincoNanco/Dook/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/LincoNanco/Dook</RepositoryUrl>
     <PackageVersion>1.0.1</PackageVersion>
