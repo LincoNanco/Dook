@@ -1,6 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>.NET Core light object mapper for SQL databases.</Description>
+    <Copyright>Copyright Linco Ñanco</Copyright>
+    <AssemblyName>Dook</AssemblyName>
+    <PackageId>Dook</PackageId>
+    <PackageTags>objectmapper;sql;linq</PackageTags>
+    <!-- <PackageIconUrl>https://raw.githubusercontent.com/jbogard/MediatR/master/assets/logo/gradient_128x128.png</PackageIconUrl> -->
+    <PackageProjectUrl>https://github.com/LincoNanco/Dook</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/LincoNanco/Dook/LICENSE</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>git://github.com/LincoNanco/Dook</RepositoryUrl>
+    <PackageVersion>1.0.1</PackageVersion>
+    <Author>Linco Ñanco</Author>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MySql.Data" Version="8.0.15"/>
