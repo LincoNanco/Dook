@@ -239,14 +239,14 @@ namespace Dook
                     fpCount++;
                 }
                 string fields = String.Join(", ", f.TableMapping.Values.Select(v => Alias + "." + "[" + v + "]"));
-                sb.Append("SELECT " + fields + " FROM " + f.FunctionName + "(" + String.Join(",", parameters) + ") AS " + Alias);
+                sb.Append("SELECT TOP 10000000 " + fields + " FROM " + f.FunctionName + "(" + String.Join(",", parameters) + ") AS " + Alias);
                 Type type = f.ElementType;
             }
             else if (q != null)
             {
                 // assume constant nodes w/ IQueryables are table references
                 string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + "[" +  v + "]"));
-                sb.Append("SELECT " + fields + " FROM " + q.TableName + " AS " + Alias);
+                sb.Append("SELECT TOP 10000000 " + fields + " FROM " + q.TableName + " AS " + Alias);
                 Type type = q.ElementType;
             }
             else if (c.Value == null)
