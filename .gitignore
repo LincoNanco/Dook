@@ -45,3 +45,6 @@ appsettings.Development.json
 # Visual Studio
 .vs/
 .vscode/
+
+#nuget packages
+*.nupkg
