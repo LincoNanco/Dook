@@ -265,6 +265,12 @@ namespace Dook
                             predicate.Parameters.Add(parameterName, c.Value);
                             break;
                         }
+                        if (c.Value is DateTimeOffset)
+                        {
+                            sb.Append(parameterName);
+                            predicate.Parameters.Add(parameterName, c.Value);
+                            break;
+                        }
                         throw new NotSupportedException(string.Format("The constant for '{0}' is not supported. ", c.Value));
                     default:
                         sb.Append(parameterName);
