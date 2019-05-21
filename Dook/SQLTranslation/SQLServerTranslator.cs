@@ -16,15 +16,26 @@ namespace Dook
         SQLPredicate predicate;
         int Initial;
         string Alias = "x";
-        bool HasPredicate;
 
-        internal SQLServerTranslator()
+        //To check SQL rules
+        bool HasOrderBy;
+        bool HasOffset;
+        bool IsNested;
+        bool OffsetRequired;
+        bool OrderByRequired;
+
+        public void ResetClauses()
         {
+            HasOrderBy = false;
+            HasOffset = false;
+            OffsetRequired = false;
+            OrderByRequired = false;
         }
 
         public SQLPredicate Translate(Expression expression, int initial = 0)
         {
-            HasPredicate = false;
+            IsNested = false;
+            ResetClauses();
             Initial = initial;
             sb = new StringBuilder();
             predicate = new SQLPredicate();
@@ -44,24 +55,55 @@ namespace Dook
 
         protected override Expression VisitMethodCall(MethodCallExpression m)
         {
-            bool IsSecondPredicate = HasPredicate; 
+            //checking requirements
+            if (OffsetRequired && m.Method.DeclaringType == typeof(Queryable) && m.Method.Name != "Skip")
+            {
+                HasOffset = true; //This query has offset declared
+                OrderByRequired = true; //This query requires an order by clause to be valid
+                OffsetRequired = false;
+                this.Visit(m);
+                sb.Append(" OFFSET 0 ROWS ");
+                return m;
+            }
+
+            if (OrderByRequired && m.Method.DeclaringType == typeof(Queryable) && (m.Method.Name != "OrderBy" & m.Method.Name != "OrderByDescending" & m.Method.Name != "ThenBy" & m.Method.Name != "ThenByDescending"))
+            {
+                OrderByRequired = false;
+                this.Visit(m);
+                sb.Append(" ORDER BY 1 "); //Ordering by the first query column
+                return m;
+            }
+
+            //Exploring methods
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Where")
             {
-                if (IsSecondPredicate) sb.Append("SELECT TOP 1000000 * FROM (");
+                IsNested = true; //nesting next statements inside where clause
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
+                //adjusting query string by rules
+                //nested ORDER BY requires TOP or OFFSET. If they aren't used, using TOP 10000000
+                if (IsNested && HasOrderBy && !HasOffset) //adding top <big number> when order by exists without offset
+                {
+                    sb.Append("SELECT TOP 10000000 * FROM (");
+                }
+                else
+                {
+                    sb.Append("SELECT * FROM (");
+                }
+                //reset clause booleans
+                ResetClauses();
                 this.Visit(m.Arguments[0]);
-                if (IsSecondPredicate) sb.Append(") AS " + Alias);
-                sb.Append(" WHERE ");
+                sb.Append(") AS " + Alias + " WHERE ");
                 this.Visit(lambda.Body);
                 return m;
             }
-             //TODO: for SQL Server LIMIT is not valid. Use TOP or FIRST
+
             if (m.Method.DeclaringType == typeof(Queryable) && (m.Method.Name == "First" || m.Method.Name == "FirstOrDefault"))
             {
                 if (m.Arguments.Count == 1)
                 {
                     sb.Append("SELECT TOP 1 * FROM (");
+                    ResetClauses();
                     this.Visit(m.Arguments[0]);
                     sb.Append(") AS " + Alias);
                     return m;
@@ -71,6 +113,7 @@ namespace Dook
                     LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                     sb.Append("SELECT TOP 1 * FROM (");
                     Alias = lambda.Parameters[0].Name;
+                    ResetClauses();
                     this.Visit(m.Arguments[0]);
                     sb.Append(") AS " + Alias + " WHERE ");
                     this.Visit(lambda.Body);
@@ -80,9 +123,11 @@ namespace Dook
 
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Count")
             {
+                IsNested = true; //nesting next statements inside count clause
                 if (m.Arguments.Count == 1)
                 {
                     sb.Append("SELECT COUNT(*) FROM (");
+                    ResetClauses();
                     this.Visit(m.Arguments[0]);
                     sb.Append(") AS " + Alias);
                     return m;
@@ -92,17 +137,82 @@ namespace Dook
                     LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                     sb.Append("SELECT COUNT(*) FROM (");
                     Alias = lambda.Parameters[0].Name;
+                    ResetClauses();
                     this.Visit(m.Arguments[0]);
-                    //.Append(lambda.Parameters[0]);
                     sb.Append(") AS " + Alias + " WHERE ");
                     this.Visit(lambda.Body);
                     return m;
                 }
+            }
+            
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Sum")
+            {
+                if (m.Arguments.Count > 1)
+                {
+                    LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                    sb.Append("SELECT SUM(");
+                    this.Visit(lambda.Body);
+                    sb.Append(")");
+                    sb.Append(" FROM (");
+                    Alias = lambda.Parameters[0].Name;
+                    this.Visit(m.Arguments[0]);
+                    // if (IsSecondPredicate) sb.Append(") AS " + Alias);
+                    sb.Append(") AS " + Alias);
+                    return m;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
 
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Select")
+            {
+                if (m.Arguments.Count > 1)
+                {
+                    LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                    sb.Append("SELECT ");
+                    this.Visit(lambda.Body);
+                    sb.Append(" FROM (");
+                    Alias = lambda.Parameters[0].Name;
+                    this.Visit(m.Arguments[0]);
+                    // if (IsSecondPredicate) sb.Append(") AS " + Alias);
+                    sb.Append(") AS " + Alias);
+                    return m;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Any")
+            {
+                IsNested = true; //nesting next statements inside count clause
+                if (m.Arguments.Count == 1)
+                {
+                    sb.Append("SELECT CASE WHEN EXISTS(");
+                    ResetClauses();
+                    this.Visit(m.Arguments[0]);
+                    sb.Append(") THEN 1 ELSE 0 END AS BIT");
+                    return m;
+                }
+                else
+                {
+                    LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                    sb.Append("SELECT EXISTS(");
+                    Alias = lambda.Parameters[0].Name;
+                    ResetClauses();
+                    this.Visit(m.Arguments[0]);
+                    sb.Append(") AS " + Alias + " WHERE ");
+                    this.Visit(lambda.Body);
+                    return m;
+                }
             }
 
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Take")
             {
+                OffsetRequired = true;
                 this.Visit(m.Arguments[0]);
                 sb.Append(" FETCH NEXT " + m.Arguments[1] + " ROWS ONLY ");
                 return m;
@@ -110,6 +220,9 @@ namespace Dook
 
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Skip")
             {
+                HasOffset = true;
+                OrderByRequired = true;
+                OffsetRequired = false;
                 this.Visit(m.Arguments[0]);
                 sb.Append(" OFFSET " + m.Arguments[1] + " ROWS ");
                 return m;
@@ -117,6 +230,8 @@ namespace Dook
 
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "OrderBy")
             {
+                HasOrderBy = true;
+                OrderByRequired = false;
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
                 this.Visit(m.Arguments[0]);
@@ -125,8 +240,20 @@ namespace Dook
                 return m;
             }
 
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "ThenBy")
+            {
+                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                Alias = lambda.Parameters[0].Name;
+                this.Visit(m.Arguments[0]);
+                sb.Append(" ,");
+                this.Visit(lambda.Body);
+                return m;
+            }
+
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "OrderByDescending")
             {
+                HasOrderBy = true;
+                OrderByRequired = false;
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
                 this.Visit(m.Arguments[0]);
@@ -135,6 +262,18 @@ namespace Dook
                 sb.Append(" DESC ");
                 return m;
             }
+
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "ThenByDescending")
+            {
+                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                Alias = lambda.Parameters[0].Name;
+                this.Visit(m.Arguments[0]);
+                sb.Append(" ,");
+                this.Visit(lambda.Body);
+                sb.Append(" DESC ");
+                return m;
+            }
+
             //Handling other methods
             return TranslateMethod(m, false);
             throw new NotSupportedException(string.Format("The method '{0}' is not supported", m.Method.Name));
@@ -239,14 +378,30 @@ namespace Dook
                     fpCount++;
                 }
                 string fields = String.Join(", ", f.TableMapping.Values.Select(v => Alias + "." + "[" + v + "]"));
-                sb.Append("SELECT TOP 10000000 " + fields + " FROM " + f.FunctionName + "(" + String.Join(",", parameters) + ") AS " + Alias);
+                if (IsNested && HasOrderBy && !HasOffset) //adding top <big number> when order by exists without offset
+                {
+                    sb.Append("SELECT TOP 10000000 ");
+                }
+                else
+                {
+                    sb.Append("SELECT ");
+                }
+                sb.Append(fields + " FROM " + f.FunctionName + "(" + String.Join(",", parameters) + ") AS " + Alias);
                 Type type = f.ElementType;
             }
             else if (q != null)
             {
                 // assume constant nodes w/ IQueryables are table references
                 string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + "[" +  v + "]"));
-                sb.Append("SELECT TOP 10000000 " + fields + " FROM " + q.TableName + " AS " + Alias);
+                if (IsNested && HasOrderBy && !HasOffset) //adding top <big number> when order by exists without offset
+                {
+                    sb.Append("SELECT TOP 10000000 ");
+                }
+                else
+                {
+                    sb.Append("SELECT ");
+                }
+                sb.Append(fields + " FROM " + q.TableName + " AS " + Alias);
                 Type type = q.ElementType;
             }
             else if (c.Value == null)

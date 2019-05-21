@@ -122,7 +122,6 @@ namespace Dook
                     // if (IsSecondPredicate) sb.Append(") AS " + Alias);
                     sb.Append(") AS " + Alias);
                     IsSecondPredicate = true;
-                    string hola = sb.ToString();
                     return m;
                 }
                 else
@@ -181,6 +180,16 @@ namespace Dook
                 return m;
             }
 
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "ThenBy")
+            {
+                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                Alias = lambda.Parameters[0].Name;
+                this.Visit(m.Arguments[0]);
+                sb.Append(" ,");
+                this.Visit(lambda.Body);
+                return m;
+            }
+
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "OrderByDescending")
             {
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
@@ -191,6 +200,18 @@ namespace Dook
                 sb.Append(" DESC ");
                 return m;
             }
+
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "ThenByDescending")
+            {
+                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                Alias = lambda.Parameters[0].Name;
+                this.Visit(m.Arguments[0]);
+                sb.Append(" ,");
+                this.Visit(lambda.Body);
+                sb.Append(" DESC ");
+                return m;
+            }
+
             return TranslateMethod(m, false);
             throw new NotSupportedException(string.Format("The method '{0}' is not supported", m.Method.Name));
 
