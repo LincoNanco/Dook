@@ -7,78 +7,15 @@ using Dook.Attributes;
 
 namespace Dook
 {
-    public static class ObjectReader
-    {
-        /// <summary>
-        /// Gets an entity from an open IDataReader using a starting Index. This method is used for Joins.
-        /// </summary>
-        /// <returns>The entity using index.</returns>
-        /// <param name="oReader">O reader.</param>
-        /// <param name="position">Position.</param>
-        /// <typeparam name="T">The 1st type parameter.</typeparam>
-        public static T GetEntityUsingIndex<T>(IDataReader oReader, int position, Dictionary<string, string> TableMapping) where T : IEntity, new()
-        {
-            T entity = new T();
-            Type Type = entity.GetType();
-            int i = position;
-            //Returning default object of type T when no Id is reported for an entity
-            if (oReader[i] == DBNull.Value)
-            {
-                return default(T);
-            }
-            foreach (string p in TableMapping.Keys)
-            {
-                PropertyInfo propertyInfo = Type.GetProperty(p);
-                object value = oReader[i];
-                if (value != DBNull.Value)
-                {
-                    if (value != null)
-                    {
-                        propertyInfo.SetValue(entity, ChangeType(value, propertyInfo.PropertyType));
-                    }
-                }
-                i++;
-            }
-            return entity;
-        }
-
-        /// <summary>
-        /// Converts from when type to another and supports conversions to nullable types.
-        /// </summary>
-        /// <returns>The type.</returns>
-        /// <param name="value">Value.</param>
-        /// <param name="conversion">Conversion.</param>
-        private static object ChangeType(object value, Type conversion)
-        {
-            var t = conversion;
-            if (t.IsGenericType && t.GetGenericTypeDefinition().Equals(typeof(Nullable<>)))
-            {
-                if (value == null)
-                {
-                    return null;
-                }
-                t = Nullable.GetUnderlyingType(t);
-            }
-
-            //This handles int conversion to Enum when it applies
-            if (t.BaseType == typeof(Enum))
-            {
-                return Enum.ToObject(t, value);
-            }
-            return Convert.ChangeType(value, t);
-        }
-    }
-    
-
     /// <summary>
-    /// This class is needed to read different kinds of objects from an opened IDataReader.
+    /// This class is needed to read different kinds of primitive variables from an opened IDataReader.
     /// </summary>
-    public class ObjectReader<T> : IEnumerable<T>, IEnumerable where T : class, new()
+    public class VariableReader<T> : IEnumerable<T>, IEnumerable
     {
         Enumerator enumerator;
         Dictionary<string, string> TableMapping;
 
-        internal ObjectReader(IDataReader Reader)
+        internal VariableReader(IDataReader Reader)
         {
             TableMapping = new Dictionary<string, string>();
             PropertyInfo[] properties = typeof(T).GetTypeInfo().GetProperties();
@@ -166,23 +103,16 @@ namespace Dook
             {
                 if (reader.Read())
                 {
-                    T entity = new T();
-                    Type Type = entity.GetType();
                     int i = 0;
-                    foreach (string p in tableMapping.Keys)
+                    object value = reader[i];
+                    if (value != DBNull.Value)
                     {
-                        PropertyInfo propertyInfo = Type.GetProperty(p);
-                        object value = reader[i];
-                        if (value != DBNull.Value)
+                        if (value != null)
                         {
-                            if (value != null)
-                            {
-                                propertyInfo.SetValue(entity, ChangeType(value, propertyInfo.PropertyType));
-                            }
+                            current = (T)ChangeType(value, typeof(T));
                         }
-                        i++;
                     }
-                    current = entity;
+                    i++;
                     return true;
                 }
                 return false;

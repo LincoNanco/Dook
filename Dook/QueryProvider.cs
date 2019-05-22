@@ -220,27 +220,41 @@ namespace Dook
             {
                 IDataReader reader = cmd.ExecuteReader();
                 Type elementType = TypeSystem.GetElementType(expression.Type);
-                //This is to handle Count method
-                if (elementType == typeof(int))
+                //TODO: for select to work properly, we need to identify whether the elementType is an IEnumerable or not
+                if (!typeof(IQueryable).IsAssignableFrom(expression.Type))
                 {
-                    reader.Read();
-                    int result = Convert.ToInt32(reader[0] == DBNull.Value ? 0 : reader[0]);
-                    reader.Dispose();
-                    return result;
+                    //This is to handle Count method
+                    if (elementType == typeof(int))
+                    {
+                        reader.Read();
+                        int result = Convert.ToInt32(reader[0] == DBNull.Value ? 0 : reader[0]);
+                        reader.Dispose();
+                        return result;
+                    }
+                    //Sum method
+                    if (elementType == typeof(double))
+                    {
+                        reader.Read();
+                        double result = Convert.ToDouble(reader[0] == DBNull.Value ? 0 : reader[0]);
+                        reader.Dispose();
+                        return result;
+                    }
+                    //Any method
+                    if (elementType == typeof(bool))
+                    {
+                        reader.Read();
+                        bool result = Convert.ToBoolean(reader[0]);
+                        reader.Dispose();
+                        return result;
+                    }
                 }
-                if (elementType == typeof(double))
+                if (elementType.IsPrimitive)
                 {
-                    reader.Read();
-                    double result = Convert.ToDouble(reader[0] == DBNull.Value ? 0 : reader[0]);
-                    reader.Dispose();
-                    return result;
-                }
-                if (elementType == typeof(bool))
-                {
-                    reader.Read();
-                    bool result = Convert.ToBoolean(reader[0]);
-                    reader.Dispose();
-                    return result;
+                    return Activator.CreateInstance(
+                    typeof(VariableReader<>).MakeGenericType(elementType),
+                    BindingFlags.Instance | BindingFlags.NonPublic, null,
+                    new object[] { reader },
+                    null);
                 }
                 return Activator.CreateInstance(
                 typeof(ObjectReader<>).MakeGenericType(elementType),
