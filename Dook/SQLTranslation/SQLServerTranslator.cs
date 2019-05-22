@@ -176,7 +176,6 @@ namespace Dook
                     sb.Append(" FROM (");
                     Alias = lambda.Parameters[0].Name;
                     this.Visit(m.Arguments[0]);
-                    // if (IsSecondPredicate) sb.Append(") AS " + Alias);
                     sb.Append(") AS " + Alias);
                     return m;
                 }

@@ -130,6 +130,26 @@ namespace Dook
                 }
             }
 
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Select")
+            {
+                if (m.Arguments.Count > 1)
+                {
+                    LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                    sb.Append("SELECT ");
+                    this.Visit(lambda.Body);
+                    sb.Append(" FROM (");
+                    Alias = lambda.Parameters[0].Name;
+                    this.Visit(m.Arguments[0]);
+                    sb.Append(") AS " + Alias);
+                    IsSecondPredicate = true;
+                    return m;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Any")
             {
                 if (m.Arguments.Count == 1)
