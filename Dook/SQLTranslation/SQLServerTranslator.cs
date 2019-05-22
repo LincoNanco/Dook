@@ -241,7 +241,8 @@ namespace Dook
 
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "ThenBy")
             {
-                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                HasOrderBy = true;
+                OrderByRequired = false;LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
                 this.Visit(m.Arguments[0]);
                 sb.Append(" ,");
@@ -264,6 +265,8 @@ namespace Dook
 
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "ThenByDescending")
             {
+                HasOrderBy = true;
+                OrderByRequired = false;
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
                 this.Visit(m.Arguments[0]);
@@ -377,21 +380,50 @@ namespace Dook
                     fpCount++;
                 }
                 string fields = String.Join(", ", f.TableMapping.Values.Select(v => Alias + "." + "[" + v + "]"));
+                string AppendToQuery = string.Empty;
+                if (OffsetRequired)
+                {
+                    HasOffset = true;
+                    OrderByRequired = true;
+                    OffsetRequired = false;
+                    AppendToQuery = " OFFSET 0 ROWS ";
+                }
+                if (OrderByRequired && !HasOrderBy)
+                {
+                    OrderByRequired = false;
+                    HasOrderBy = true;
+                    AppendToQuery = " ORDER BY 1 " + AppendToQuery;
+                }
                 if (IsNested && HasOrderBy && !HasOffset) //adding top <big number> when order by exists without offset
                 {
+
                     sb.Append("SELECT TOP 10000000 ");
                 }
                 else
                 {
                     sb.Append("SELECT ");
                 }
-                sb.Append(fields + " FROM " + f.FunctionName + "(" + String.Join(",", parameters) + ") AS " + Alias);
+                sb.Append(fields + " FROM " + f.FunctionName + "(" + String.Join(",", parameters) + ") AS " + Alias + AppendToQuery);
                 Type type = f.ElementType;
             }
             else if (q != null)
             {
                 // assume constant nodes w/ IQueryables are table references
                 string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + "[" +  v + "]"));
+                string AppendToQuery = string.Empty;
+                if (OffsetRequired)
+                {
+                    HasOffset = true;
+                    OrderByRequired = true;
+                    OffsetRequired = false;
+                    AppendToQuery = " OFFSET 0 ROWS ";
+                }
+                if (OrderByRequired && !HasOrderBy)
+                {
+                    OrderByRequired = false;
+                    HasOrderBy = true;
+                    AppendToQuery = " ORDER BY 1 " + AppendToQuery;
+                }
                 if (IsNested && HasOrderBy && !HasOffset) //adding top <big number> when order by exists without offset
                 {
                     sb.Append("SELECT TOP 10000000 ");
@@ -400,7 +432,7 @@ namespace Dook
                 {
                     sb.Append("SELECT ");
                 }
-                sb.Append(fields + " FROM " + q.TableName + " AS " + Alias);
+                sb.Append(fields + " FROM " + q.TableName + " AS " + Alias + AppendToQuery);
                 Type type = q.ElementType;
             }
             else if (c.Value == null)
