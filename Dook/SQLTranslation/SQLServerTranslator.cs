@@ -77,7 +77,6 @@ namespace Dook
             //Exploring methods
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Where")
             {
-                IsNested = true; //nesting next statements inside where clause
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
                 //adjusting query string by rules
@@ -90,6 +89,7 @@ namespace Dook
                 {
                     sb.Append("SELECT * FROM (");
                 }
+                IsNested = true; //nesting next statements inside where clause
                 //reset clause booleans
                 ResetClauses();
                 this.Visit(m.Arguments[0]);
@@ -100,6 +100,7 @@ namespace Dook
 
             if (m.Method.DeclaringType == typeof(Queryable) && (m.Method.Name == "First" || m.Method.Name == "FirstOrDefault"))
             {
+                IsNested = true; //nesting next statements inside this clause
                 if (m.Arguments.Count == 1)
                 {
                     sb.Append("SELECT TOP 1 * FROM (");
@@ -147,6 +148,7 @@ namespace Dook
             
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Sum")
             {
+                IsNested = true; //nesting next statements inside this clause
                 if (m.Arguments.Count > 1)
                 {
                     LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
@@ -168,6 +170,7 @@ namespace Dook
 
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Select")
             {
+                IsNested = true; //nesting next statements inside this clause
                 if (m.Arguments.Count > 1)
                 {
                     LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
