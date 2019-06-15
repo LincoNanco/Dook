@@ -60,10 +60,10 @@ namespace Dook
             {
                 ((ITrackDateOfChange)entity).UpdatedOn = DateTime.Now;
             }
-            if (entity is ITrackDateOfCreation)
-            {
-                ((ITrackDateOfCreation)entity).CreatedOn = ((ITrackDateOfCreation)entity).CreatedOn == DateTime.MinValue ? DateTime.Now : ((ITrackDateOfCreation)entity).CreatedOn;
-            }
+            // if (entity is ITrackDateOfCreation)
+            // {
+            //     ((ITrackDateOfCreation)entity).CreatedOn = ((ITrackDateOfCreation)entity).CreatedOn == DateTime.MinValue ? DateTime.Now : ((ITrackDateOfCreation)entity).CreatedOn;
+            // }
             query.Append(" UPDATE ");
             query.Append(TableName);
             query.Append(" SET ");
@@ -72,7 +72,7 @@ namespace Dook
             string us = string.Empty;
             foreach (string p in TableMapping.Keys)
             {
-                if (p != "Id")
+                if (p != "Id" && p != "CreatedOn")
                 {
                     if (starting)
                     {
@@ -93,7 +93,7 @@ namespace Dook
             Type Type = typeof(T);
             foreach (string p in TableMapping.Keys)
             {
-                if (p != "Id")
+                if (p != "Id" && p != "CreatedOn")
                 {
                     SetParameter(cmd, "@" + p, Type.GetProperty(p).GetValue(entity) ?? DBNull.Value);
                 }
