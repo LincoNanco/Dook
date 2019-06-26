@@ -202,12 +202,14 @@ namespace Dook
                 else
                 {
                     LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
-                    sb.Append("SELECT EXISTS(");
+                    sb.Append("SELECT CASE WHEN EXISTS(");
+                    sb.Append("SELECT * FROM(");
                     Alias = lambda.Parameters[0].Name;
                     ResetClauses();
                     this.Visit(m.Arguments[0]);
                     sb.Append(") AS " + Alias + " WHERE ");
                     this.Visit(lambda.Body);
+                    sb.Append(") THEN 1 ELSE 0 END AS BIT");
                     return m;
                 }
             }
