@@ -11,7 +11,7 @@
     <PackageLicenseUrl>https://github.com/LincoNanco/Dook/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/LincoNanco/Dook</RepositoryUrl>
-    <PackageVersion>1.1.3</PackageVersion>
+    <PackageVersion>1.1.4</PackageVersion>
     <Author>Linco Ñanco</Author>
   </PropertyGroup>
   <ItemGroup>
