@@ -18,6 +18,7 @@ namespace Dook
         /// <typeparam name="T">The 1st type parameter.</typeparam>
         public static T GetEntityUsingIndex<T>(IDataReader oReader, int position, Dictionary<string, string> TableMapping) where T : IEntity, new()
         {
+            if (TableMapping.Count == 0) throw new ArgumentException("Table Mapping not set!!!");
             T entity = new T();
             Type Type = entity.GetType();
             int i = position;
@@ -80,17 +81,7 @@ namespace Dook
 
         internal ObjectReader(IDataReader Reader)
         {
-            TableMapping = new Dictionary<string, string>();
-            PropertyInfo[] properties = typeof(T).GetTypeInfo().GetProperties();
-            foreach (PropertyInfo p in properties)
-            {
-                NotMappedAttribute nm = p.GetCustomAttribute<NotMappedAttribute>();
-                if (nm == null)
-                {
-                    ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
-                    TableMapping.Add(p.Name, cma != null ? cma.ColumnName : p.Name);
-                }
-            }
+            TableMapping = Mapper.GetTableMapping<T>();
             enumerator = new Enumerator(Reader, TableMapping);
         }
 

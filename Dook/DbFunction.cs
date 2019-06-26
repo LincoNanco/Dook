@@ -64,17 +64,7 @@ namespace Dook
 
         private void GetTableData()
         {
-            TableMapping = new Dictionary<string, string>();
-            PropertyInfo[] properties = typeof(T).GetTypeInfo().GetProperties();
-            foreach (PropertyInfo p in properties)
-            {
-                NotMappedAttribute nm = p.GetCustomAttribute<NotMappedAttribute>();
-                if (nm == null)
-                {
-                    ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
-                    TableMapping.Add(p.Name, cma != null ? cma.ColumnName : p.Name);
-                }
-            }
+            TableMapping = Mapper.GetTableMapping<T>();
             FunctionNameAttribute tableNameAtt = typeof(T).GetTypeInfo().GetCustomAttribute<FunctionNameAttribute>();
             FunctionName = tableNameAtt != null ? tableNameAtt.FunctionName : typeof(T).Name + "s";
             alias = FunctionName.First().ToString().ToLower();

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Reflection;
 using Dook.Attributes;
 
@@ -13,22 +14,10 @@ namespace Dook
     public class VariableReader<T> : IEnumerable<T>, IEnumerable
     {
         Enumerator enumerator;
-        Dictionary<string, string> TableMapping;
 
         internal VariableReader(IDataReader Reader)
         {
-            TableMapping = new Dictionary<string, string>();
-            PropertyInfo[] properties = typeof(T).GetTypeInfo().GetProperties();
-            foreach (PropertyInfo p in properties)
-            {
-                NotMappedAttribute nm = p.GetCustomAttribute<NotMappedAttribute>();
-                if (nm == null)
-                {
-                    ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
-                    TableMapping.Add(p.Name, cma != null ? cma.ColumnName : p.Name);
-                }
-            }
-            enumerator = new Enumerator(Reader, TableMapping);
+            enumerator = new Enumerator(Reader);
         }
 
         /// <summary>
@@ -76,12 +65,10 @@ namespace Dook
         {
             IDataReader reader;
             T current;
-            Dictionary<string, string> tableMapping;
 
-            public Enumerator(IDataReader oReader, Dictionary<string,string> TableMapping)
+            public Enumerator(IDataReader oReader)
             {
                 reader = oReader;
-                tableMapping = TableMapping;
             }
 
             public T Current
