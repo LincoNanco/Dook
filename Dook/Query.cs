@@ -22,7 +22,7 @@ namespace Dook
             }
             this.QueryProvider = provider;
             this.Predicate = Expression.Constant(this);
-            GetTableData();
+            if (typeof(T).GetInterfaces().Contains(typeof(IEntity))) GetTableData();
         }
 
         public Query(QueryProvider provider, Expression expression)
@@ -43,7 +43,7 @@ namespace Dook
             }
             this.QueryProvider = provider;
             this.Predicate = expression;
-            GetTableData();
+            if (typeof(T).GetInterfaces().Contains(typeof(IEntity))) GetTableData();
         }
 
         private void GetTableData()
