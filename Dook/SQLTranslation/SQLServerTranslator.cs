@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Dook.Attributes;
 
+[assembly: InternalsVisibleTo("Dook.Tests")]
 namespace Dook
 {
     internal class SQLServerTranslator : AbstractExpressionVisitor, ISQLTranslator
