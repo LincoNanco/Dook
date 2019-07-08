@@ -248,7 +248,7 @@ namespace Dook
                         return result;
                     }
                 }
-                if (elementType.IsPrimitive)
+                if (elementType.IsPrimitive || elementType == typeof(string))
                 {
                     return Activator.CreateInstance(
                     typeof(VariableReader<>).MakeGenericType(elementType),
