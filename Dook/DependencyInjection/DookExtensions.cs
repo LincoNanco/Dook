@@ -7,6 +7,8 @@ namespace Dook
     {
         public static IServiceCollection AddDookContext<T>(this IServiceCollection services, Action<DookConfigurationOptions<T>> options) where T : Context
         {
+            //checking that non-null options are provided
+            if (options == null) throw new ArgumentNullException(nameof(options));
             //Adding configuration
             services.AddScoped<DookConfigurationOptions<T>>(sp => 
             {
