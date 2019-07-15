@@ -16,22 +16,17 @@ namespace Dook
         protected DbProvider DbProvider;
         internal string Suffix;
 
-        public Context(string ConnectionString, DbType DbType, string Suffix = "Repository")
+        public Context(IDookConfigurationOptions configuration)
         {
-            this.DbType = DbType;
-            this.ConnectionString = ConnectionString;
+            DbType = configuration.DatabaseType;
+            ConnectionString = configuration.ConnectionString;
             DbProvider = new DbProvider(DbType, ConnectionString);
             JoinProvider = new JoinProvider(DbProvider);
             QueryProvider = new QueryProvider(DbProvider);
             DbProvider.Connection.Open();
             DbProvider.Transaction = DbProvider.Connection.BeginTransaction();
-            this.Suffix = Suffix;
+            Suffix = configuration.Suffix;
         }
-
-        //public Query<T> GetQuery<T>() where T : new()
-        //{
-        //    return new Query<T>(ConnectionString, DbType);
-        //}
 
         public IDbConnection GetConnection()
         {
