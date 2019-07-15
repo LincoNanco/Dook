@@ -62,19 +62,6 @@ namespace Dook
             }
         }
 
-        public void OrderBy<T>(Expression<Func<T,object>> expression) where T : IEntity, new()
-        {
-            if (expression != null)
-            {
-                JoinProvider.AddOrderBy(expression);
-            }
-        }
-
-        public void Paginate(int skip, int take)
-        {
-            JoinProvider.AddPagination(skip, take);
-        }
-
         public void ExecuteJoin()
         {
             try
@@ -90,10 +77,6 @@ namespace Dook
                     MethodInfo Clear = DataStore.GetType().GetMethod("Clear");
                     Clear.Invoke(DataStore, new object[]{});
                 }
-                //using (IDbConnection c = GetConnection())
-                //{
-                    //c.Open();
-                //cmd.Connection = GetConnection();
                 using (IDataReader oReader = cmd.ExecuteReader())
                 {
                     while (oReader.Read())
@@ -105,7 +88,6 @@ namespace Dook
                         }
                     }
                 }
-                //}
                 JoinProvider = new JoinProvider(DbProvider);
             }
             catch (Exception e)
@@ -114,18 +96,6 @@ namespace Dook
                 throw e;
             }
         }
-
-        public int Count()
-        {
-            IDbCommand cmd = JoinProvider.GetCountCommand();
-            return Convert.ToInt32(cmd.ExecuteScalar());
-        }
-
-        // public int Count<T>(Expression<Func<T,object>> expression)
-        // {
-        //     IDbCommand cmd = JoinProvider.GetCountCommand<T>(expression);
-        //     return Convert.ToInt32(cmd.ExecuteScalar());
-        // }
 
         public void SaveChanges()
         {
