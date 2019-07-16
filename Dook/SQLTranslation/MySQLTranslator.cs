@@ -137,7 +137,19 @@ namespace Dook
                 {
                     LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                     sb.Append("SELECT ");
-                    this.Visit(lambda.Body);
+                    if (lambda.Body.CanReduce)
+                    {
+                        BlockExpression e =  (BlockExpression) lambda.Body.Reduce();
+                        for (int i = 1; i < e.Expressions.Count - 1; i++)
+                        {
+                            this.Visit(((BinaryExpression)e.Expressions[i]).Right);
+                            if (i < e.Expressions.Count - 2) sb.Append(", ");
+                        }
+                    } 
+                    else
+                    {
+                        this.Visit(lambda.Body);
+                    }
                     sb.Append(" FROM (");
                     Alias = lambda.Parameters[0].Name;
                     this.Visit(m.Arguments[0]);

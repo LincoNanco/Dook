@@ -12,7 +12,9 @@ public static class Mapper
         //getting properties in a specific order
         Dictionary<string,string> TableMapping = new Dictionary<string,string>();
         TypeInfo typeInfo = typeof(T).GetTypeInfo();
-        List<PropertyInfo> properties = new List<PropertyInfo> { typeInfo.GetProperty("Id") }; //TODO: this is because Join reader always assume Id comes first
+        List<PropertyInfo> properties = new List<PropertyInfo>(); 
+        PropertyInfo idPropertyInfo = typeInfo.GetProperty("Id");
+        if (idPropertyInfo != null) properties.Add(typeInfo.GetProperty("Id")) ; //TODO: this is because Join reader always assume Id comes first
         properties.AddRange(typeof(T).GetTypeInfo().GetProperties().Where(p => p.Name != "Id").OrderBy(p => p.Name).ToList());
         foreach (PropertyInfo p in properties)
         {
