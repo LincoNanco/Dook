@@ -64,6 +64,10 @@ namespace Dook.Tests
             Assert.Equal("DELETE FROM TestModels WHERE Id = @id;", cmd.CommandText);
         }
 
+        /// <summary>
+        /// GetUpdateCommand Tests
+        /// </summary>
+        /// <returns></returns>
         public static IEnumerable<object[]> GetUpdateCommandTestsData()
         {
             List<string> properties = new List<string>();
@@ -100,6 +104,7 @@ namespace Dook.Tests
                 "Id property must be a positive integer."
             };
         }
+
         [Theory, MemberData("GetUpdateCommandTestsData")]
         public void GetUpdateCommandTests(TestModel model, string expectedResult)
         {
@@ -115,6 +120,47 @@ namespace Dook.Tests
             {
                 result = e.Message;
             }
+            Assert.Equal(expectedResult, result);
+        }
+
+        /// <summary>
+        /// GetInsertCommand Tests
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object[]> GetInsertCommandTestsData()
+        {
+            List<string> properties = new List<string>();
+            List<string> values = new List<string>();
+            Dictionary<string, string> TableMapping = Mapper.GetTableMapping<TestModel>();
+            foreach (string attributeName in TableMapping.Keys)
+            {
+                if (attributeName == "Id") continue;
+                properties.Add($"{TableMapping[attributeName]}");
+                values.Add($"@{attributeName}");
+            }
+            yield return new object[]
+            {
+                new TestModel{
+                    CreatedOn = new DateTime(2019,05,07),
+                    UpdatedOn = new DateTime(2019,05,07),
+                    Id = 1,
+                    BoolProperty = true,
+                    DateTimeProperty = new DateTime(2019,05,07),
+                    StringProperty = "test",
+                    EnumProperty = TestEnum.One
+                },
+                $"INSERT INTO TestModels ({String.Join(", ", properties)}) VALUES ({String.Join(", ", values)}); SELECT @@IDENTITY;"
+            };
+        }
+
+        [Theory, MemberData("GetInsertCommandTestsData")]
+        public void GetInsertCommandTests(TestModel model, string expectedResult)
+        {
+            MySQLTranslator translator = new MySQLTranslator();
+            QueryProvider provider = new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;"));
+            string result;
+            IDbCommand cmd = provider.GetInsertCommand(model, "TestModels", Mapper.GetTableMapping<TestModel>());
+            result = cmd.CommandText;
             Assert.Equal(expectedResult, result);
         }
     }

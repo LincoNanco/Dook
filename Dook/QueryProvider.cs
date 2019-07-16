@@ -126,13 +126,13 @@ namespace Dook
                     if (starting)
                     {
                         fields += " (";
-                        values += " (";
+                        values += "(";
                         starting = false;
                     }
                     else
                     {
-                        fields += ",";
-                        values += ",";
+                        fields += ", ";
+                        values += ", ";
                     }
                     fields += TableMapping[p];
                     values += "@" + p;
@@ -143,7 +143,7 @@ namespace Dook
             query.Append(fields);
             query.Append(" VALUES ");
             query.Append(values);
-            query.Append(" ; SELECT @@IDENTITY;");
+            query.Append("; SELECT @@IDENTITY;");
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = query.ToString();
             foreach (string p in TableMapping.Keys)
