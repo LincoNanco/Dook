@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Dook.Tests.Models;
 using Xunit;
 
@@ -60,6 +61,20 @@ namespace Dook.Tests
             string expectedResult = "SELECT t.[StringProperty] FROM (SELECT * FROM (SELECT t.[Id], t.[BoolProperty], t.[CreatedOn], t.[DateTimeProperty], t.[EnumProperty], t.[StringProperty], t.[UpdatedOn] FROM TestModels AS t) AS t WHERE ((t.[BoolProperty] = @P0) AND (t.[EnumProperty] = @P1))) AS t";
             SQLServerTranslator translator = new SQLServerTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);
+            Assert.Equal(expectedResult, Sql.Sql);
+        }
+
+        [Fact]
+        public void StringQueryTest()
+        {
+            SQLPredicate predicate = new SQLPredicate();
+            predicate.Sql = "SELECT t.[StringProperty] FROM (SELECT * FROM (SELECT t.[Id], t.[BoolProperty], t.[CreatedOn], t.[DateTimeProperty], t.[EnumProperty], t.[StringProperty], t.[UpdatedOn] FROM TestModels AS t) AS t WHERE ((t.[BoolProperty] = @F0) AND (t.[EnumProperty] = @F1))) AS t"; 
+            predicate.Parameters.Add("@F1", true);
+            predicate.Parameters.Add("@F2", "Test");
+            QueryString<TestModel> queryObject = new QueryString<TestModel>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")), predicate);
+            string expectedResult = "SELECT t.[StringProperty] FROM (SELECT * FROM (SELECT t.[Id], t.[BoolProperty], t.[CreatedOn], t.[DateTimeProperty], t.[EnumProperty], t.[StringProperty], t.[UpdatedOn] FROM TestModels AS t) AS t WHERE ((t.[BoolProperty] = @F0) AND (t.[EnumProperty] = @F1))) AS t";
+            SQLServerTranslator translator = new SQLServerTranslator();
+            SQLPredicate Sql = translator.Translate(queryObject.Expression);
             Assert.Equal(expectedResult, Sql.Sql);
         }
     }

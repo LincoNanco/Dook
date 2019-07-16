@@ -13,7 +13,7 @@ namespace Dook
     /// </summary>
     public class SQLPredicate 
     {
-        public SQLPredicate()
+        public  SQLPredicate()
         {
 
         }

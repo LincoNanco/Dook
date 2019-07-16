@@ -335,6 +335,7 @@ namespace Dook
         {
             IMappedFunction f = c.Value as IMappedFunction;
             IMappedQueryable q = c.Value as IMappedQueryable;
+            IMappedStringQueryable s = c.Value as IMappedStringQueryable;
             if (f != null)
             {
                 // assume constant nodes w/ IMappedFunction are table valued function references
@@ -357,6 +358,10 @@ namespace Dook
                 string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + v));
                 sb.Append("SELECT " + fields + " FROM " + q.TableName + " AS " + Alias);
                 Type type = q.ElementType;
+            }
+            else if (s != null)
+            {
+                sb.Append(c.ToString());
             }
             else if (c.Value == null)
             {

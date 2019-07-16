@@ -70,5 +70,18 @@ namespace Dook.Tests
             SQLPredicate Sql = translator.Translate(query.Expression);
             Assert.Equal(expectedResult, Sql.Sql);
         }
+
+        [Fact]
+        public void StringQueryTest()
+        {
+            SQLPredicate predicate = new SQLPredicate();
+            predicate.Sql = "SELECT t.StringProperty FROM (SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t) AS t WHERE (t.BoolProperty AND (t.EnumProperty = @F0))) AS t"; 
+            predicate.Parameters.Add("@F1", "Test");
+            QueryString<TestModel> queryObject = new QueryString<TestModel>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")), predicate);
+            string expectedResult = "SELECT t.StringProperty FROM (SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t) AS t WHERE (t.BoolProperty AND (t.EnumProperty = @F0))) AS t";
+            SQLServerTranslator translator = new SQLServerTranslator();
+            SQLPredicate Sql = translator.Translate(queryObject.Expression);
+            Assert.Equal(expectedResult, Sql.Sql);
+        }
     }
 }
