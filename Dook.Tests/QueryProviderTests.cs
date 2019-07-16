@@ -63,5 +63,59 @@ namespace Dook.Tests
             IDbCommand cmd = provider.GetDeleteCommand(model.Id, "TestModels", Mapper.GetTableMapping<TestModel>());
             Assert.Equal("DELETE FROM TestModels WHERE Id = @id;", cmd.CommandText);
         }
+
+        public static IEnumerable<object[]> GetUpdateCommandTestsData()
+        {
+            List<string> properties = new List<string>();
+            Dictionary<string, string> TableMapping = Mapper.GetTableMapping<TestModel>();
+            foreach (string attributeName in TableMapping.Keys)
+            {
+                if (attributeName == "Id" || attributeName == "CreatedOn") continue;
+                properties.Add($"{TableMapping[attributeName]} = @{attributeName}");
+            }
+            yield return new object[]
+            {
+                new TestModel{
+                    CreatedOn = new DateTime(2019,05,07),
+                    UpdatedOn = new DateTime(2019,05,07),
+                    Id = 1,
+                    BoolProperty = true,
+                    DateTimeProperty = new DateTime(2019,05,07),
+                    StringProperty = "test",
+                    EnumProperty = TestEnum.One
+                },
+                $"UPDATE TestModels SET {String.Join(", ", properties)} WHERE Id = @id;"
+            };
+            yield return new object[]
+            {
+                new TestModel{
+                    CreatedOn = new DateTime(2019,05,07),
+                    UpdatedOn = new DateTime(2019,05,07),
+                    Id = 0,
+                    BoolProperty = true,
+                    DateTimeProperty = new DateTime(2019,05,07),
+                    StringProperty = "test",
+                    EnumProperty = TestEnum.One
+                },
+                "Id property must be a positive integer."
+            };
+        }
+        [Theory, MemberData("GetUpdateCommandTestsData")]
+        public void GetUpdateCommandTests(TestModel model, string expectedResult)
+        {
+            MySQLTranslator translator = new MySQLTranslator();
+            QueryProvider provider = new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;"));
+            string result;
+            try
+            {
+                IDbCommand cmd = provider.GetUpdateCommand(model, "TestModels", Mapper.GetTableMapping<TestModel>());
+                result = cmd.CommandText;
+            }
+            catch (Exception e)
+            {
+                result = e.Message;
+            }
+            Assert.Equal(expectedResult, result);
+        }
     }
 }

@@ -55,12 +55,13 @@ namespace Dook
 
         public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, string> TableMapping) where T : IEntity, new()
         {
+            if (entity.Id == 0) throw new Exception("Id property must be a positive integer.");
             StringBuilder query = new StringBuilder();
             if (entity is ITrackDateOfChange)
             {
                 ((ITrackDateOfChange)entity).UpdatedOn = DateTime.Now;
             }
-            query.Append(" UPDATE ");
+            query.Append("UPDATE ");
             query.Append(TableName);
             query.Append(" SET ");
             //Building update string                   
@@ -76,13 +77,13 @@ namespace Dook
                     }
                     else
                     {
-                        us += ",";
+                        us += ", ";
                     }
-                    us += TableMapping[p] + "= @" + p;
+                    us += TableMapping[p] + " = @" + p;
                 }
             }
             query.Append(us);
-            query.Append(" WHERE " + TableMapping["Id"] + " = @id");
+            query.Append(" WHERE " + TableMapping["Id"] + " = @id;");
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = query.ToString();
             //MySqlCommand cmd = new MySqlCommand(query.ToString());
@@ -109,7 +110,7 @@ namespace Dook
             {
                 ((ITrackDateOfChange)entity).UpdatedOn = DateTime.Now;
             }
-            query.Append(" INSERT INTO ");
+            query.Append("INSERT INTO ");
             query.Append(TableName);
             //Building field and values string
             string fields = string.Empty;
