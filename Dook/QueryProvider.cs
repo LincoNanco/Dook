@@ -157,23 +157,33 @@ namespace Dook
 
         public IDbCommand GetDeleteCommand(int id, string TableName, Dictionary<string, string> TableMapping)
         {
+            string queryText = $"DELETE FROM {TableName} WHERE {TableMapping["Id"]} = @id;";
+            IDbCommand cmd = DbProvider.GetCommand();
+            cmd.CommandText = queryText;
+            SetParameter(cmd, "@id", id);
+            return cmd;
+        }
+
+        public IDbCommand GetDeleteWhereCommand<T>(Expression<Func<T,bool>> expression, string TableName, Dictionary<string, string> TableMapping)
+        {
+            if (expression == null) throw new ArgumentNullException(nameof(expression), "The provided expression cannot be null.");
+            SQLPredicate predicate = Translate(Evaluator.PartialEval(expression));
+            LambdaExpression lambda = (LambdaExpression) expression;//for getting alias
             StringBuilder query = new StringBuilder();
-            query.Append(" DELETE FROM ");
-            query.Append(TableName);
-            query.Append(" WHERE " + TableMapping["Id"] + "= @id");
+            query.Append("DELETE FROM ");
+            query.Append($"{TableName} as {lambda.Parameters[0].Name}");
+            query.Append($" WHERE {predicate.Sql};");
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = query.ToString();
-            SetParameter(cmd, "@id", id);
+            predicate.SetParameters(cmd);
             return cmd;
         }
 
         public IDbCommand GetDeleteAllCommand(string TableName, Dictionary<string, string> TableMapping)
         {
-            StringBuilder query = new StringBuilder();
-            query.Append(" DELETE FROM ");
-            query.Append(TableName);
+            string queryText = $"DELETE FROM {TableName};";
             IDbCommand cmd = DbProvider.GetCommand();
-            cmd.CommandText = query.ToString();
+            cmd.CommandText = queryText;
             return cmd;
         }
 
