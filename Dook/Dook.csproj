@@ -10,7 +10,7 @@
     <PackageLicenseUrl>https://github.com/LincoNanco/Dook/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/LincoNanco/Dook</RepositoryUrl>
-    <PackageVersion>1.1.6</PackageVersion>
+    <PackageVersion>1.2.0</PackageVersion>
     <Author>Linco Ñanco</Author>
   </PropertyGroup>
   <ItemGroup>
