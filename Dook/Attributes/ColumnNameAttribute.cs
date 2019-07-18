@@ -6,9 +6,9 @@ namespace Dook.Attributes
     {
         public string ColumnName { get; set; }
 
-        public ColumnNameAttribute(string ColumnName)
+        public ColumnNameAttribute(string columnName)
         {
-            this.ColumnName = ColumnName;
+            this.ColumnName = columnName;
         }
     }
 }

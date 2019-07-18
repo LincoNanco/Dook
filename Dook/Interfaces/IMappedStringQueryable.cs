@@ -14,7 +14,7 @@ namespace Dook
     {
         Dictionary<string, string> TableMapping { get; }
         string TableName { get; }
-
-        SQLPredicate SqlPredicate { get; set; }
+        
+        SQLPredicate SQLPredicate { get; set; }
     }
 }

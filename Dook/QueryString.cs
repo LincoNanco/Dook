@@ -12,7 +12,7 @@ namespace Dook
     {
         protected QueryProvider QueryProvider;
         private Expression Predicate;
-        public SQLPredicate SqlPredicate { get;  set; }
+        public SQLPredicate SQLPredicate { get; set; }
         string alias = "x";
 
         public QueryString(QueryProvider provider, SQLPredicate predicate)
@@ -21,16 +21,14 @@ namespace Dook
             {
                 throw new ArgumentNullException(nameof(provider));
             }
-
             if (predicate == null)
             {
                 throw new ArgumentNullException(nameof(predicate));
             }
 
-            this.QueryProvider = provider;
-
-            this.SqlPredicate = predicate;
-            this.Predicate = Expression.Constant(this);
+            QueryProvider = provider;
+            SQLPredicate = predicate;
+            Predicate = Expression.Constant(this);
             if (typeof(T).GetInterfaces().Contains(typeof(IEntity))) GetTableData();
         }
 
@@ -83,7 +81,7 @@ namespace Dook
 
         public override string ToString()
         {
-            return this.SqlPredicate.Sql;
+            return this.SQLPredicate.Sql;
         }
     }
 }
