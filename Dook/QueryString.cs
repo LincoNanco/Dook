@@ -12,22 +12,23 @@ namespace Dook
     {
         protected QueryProvider QueryProvider;
         private Expression Predicate;
-        public SQLPredicate SQLPredicate { get; set; }
+        public SQLPredicate SQLPredicate { get; set; } = new SQLPredicate();
         string alias = "x";
 
-        public QueryString(QueryProvider provider, SQLPredicate predicate)
+        public QueryString(QueryProvider provider)
         {
+            SqlQueryAttribute sqlQueryAttribute = typeof(T).GetTypeInfo().GetCustomAttribute<SqlQueryAttribute>();
+            if (sqlQueryAttribute == null)
+            {
+                throw new Exception($"Generic type {nameof(T)} must define {nameof(SqlQueryAttribute)} to be used with {nameof(QueryString<T>)} class.");
+            }
             if (provider == null)
             {
                 throw new ArgumentNullException(nameof(provider));
             }
-            if (predicate == null)
-            {
-                throw new ArgumentNullException(nameof(predicate));
-            }
 
             QueryProvider = provider;
-            SQLPredicate = predicate;
+            SQLPredicate.Sql = sqlQueryAttribute.Query;
             Predicate = Expression.Constant(this);
             if (typeof(T).GetInterfaces().Contains(typeof(IEntity))) GetTableData();
         }

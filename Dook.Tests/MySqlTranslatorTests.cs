@@ -71,16 +71,34 @@ namespace Dook.Tests
             Assert.Equal(expectedResult, Sql.Sql);
         }
 
-        [Fact]
-        public void StringQueryTest()
+        /// <summary>
+        /// Testing query translation
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object[]> StringQueryTestsData()
+        {   
+            QueryString<TestQuery> queryObject = new QueryString<TestQuery>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            queryObject.SQLPredicate.Parameters.Add("@F0", 1);
+            queryObject.SQLPredicate.Parameters.Add("@F1", "Test");
+            IQueryable<TestQuery> query = queryObject;
+            yield return new object[]
+            {
+                query,
+                $"SELECT * FROM (SELECT {Mapper.GetColumnNames(typeof(TestQuery))} FROM TestModels AS t JOIN TestModels2 as u ON u.[IntProperty] = @F0 AND t.[StringProperty] = @F1) AS x"
+            };
+            IQueryable<TestQuery> query2 = queryObject.Where(t => t.AString == "Test");
+            yield return new object[]
+            {
+                query2,
+                $"SELECT * FROM (SELECT {Mapper.GetColumnNames(typeof(TestQuery))} FROM TestModels AS t JOIN TestModels2 as u ON u.[IntProperty] = @F0 AND t.[StringProperty] = @F1) AS t WHERE (t.StringProperty = @P0)"
+            };
+        }
+
+        [Theory, MemberData("StringQueryTestsData")]
+        public void StringQueryTest(IQueryable<TestQuery> query, string expectedResult)
         {
-            SQLPredicate predicate = new SQLPredicate();
-            predicate.Sql = "SELECT t.StringProperty FROM (SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t) AS t WHERE (t.BoolProperty AND (t.EnumProperty = @F0))) AS t"; 
-            predicate.Parameters.Add("@F1", "Test");
-            QueryString<TestModel> queryObject = new QueryString<TestModel>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")), predicate);
-            string expectedResult = "SELECT t.StringProperty FROM (SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t) AS t WHERE (t.BoolProperty AND (t.EnumProperty = @F0))) AS t";
-            SQLServerTranslator translator = new SQLServerTranslator();
-            SQLPredicate Sql = translator.Translate(queryObject.Expression);
+            MySQLTranslator translator = new MySQLTranslator();
+            SQLPredicate Sql = translator.Translate(query.Expression);
             Assert.Equal(expectedResult, Sql.Sql);
         }
     }

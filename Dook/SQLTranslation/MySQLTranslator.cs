@@ -361,7 +361,7 @@ namespace Dook
             }
             else if (s != null)
             {
-                sb.Append(c.ToString());
+                sb.Append($"SELECT * FROM ({c.ToString()}) AS {Alias}");
             }
             else if (c.Value == null)
             {

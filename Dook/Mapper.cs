@@ -33,15 +33,15 @@ public static class Mapper
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static string GetColumnNames<T>()
+    public static string GetColumnNames(Type type)
     {
         //getting properties in a specific order
         Dictionary<string,string> Mapping = new Dictionary<string,string>();
-        TypeInfo typeInfo = typeof(T).GetTypeInfo();
+        TypeInfo typeInfo = type.GetTypeInfo();
         List<PropertyInfo> properties = new List<PropertyInfo>(); 
         PropertyInfo idPropertyInfo = typeInfo.GetProperty("Id");
         if (idPropertyInfo != null) properties.Add(typeInfo.GetProperty("Id")) ; //TODO: this is because Join reader always assume Id comes first
-        properties.AddRange(typeof(T).GetTypeInfo().GetProperties().Where(p => p.Name != "Id").OrderBy(p => p.Name).ToList());
+        properties.AddRange(typeInfo.GetProperties().Where(p => p.Name != "Id").OrderBy(p => p.Name).ToList());
         foreach (PropertyInfo p in properties)
         {
             NotMappedAttribute nm = p.GetCustomAttribute<NotMappedAttribute>();
