@@ -14,11 +14,12 @@ namespace Dook
 
         int? CommandTimeout;
 
-        public DbProvider(DbType dbType, string connectionString, int? CommandTimeout = null)
+        public DbProvider(DbType dbType, string connectionString, int? commandTimeout = null)
         {
             DbType = dbType;
             ConnectionString = connectionString;
             Connection = GetConnection();
+            CommandTimeout = commandTimeout;
         }
 
         public IDbCommand GetCommand()
