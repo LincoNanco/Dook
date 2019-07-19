@@ -12,7 +12,7 @@ namespace Dook
 
     public interface IMappedStringQueryable : IQueryable, IEnumerable, IOrderedQueryable
     {
-        Dictionary<string, string> TableMapping { get; }
+        Dictionary<string, ColumnInfo> TableMapping { get; }
         string TableName { get; }
         
         SQLPredicate SQLPredicate { get; set; }

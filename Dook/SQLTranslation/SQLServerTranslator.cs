@@ -398,7 +398,7 @@ namespace Dook
                     predicate.Parameters.Add(name, f.GetType().GetProperty(f.IndexedParameters[pKey]).GetValue(f));
                     fpCount++;
                 }
-                string fields = String.Join(", ", f.TableMapping.Values.Select(v => Alias + "." + "[" + v + "]"));
+                string fields = String.Join(", ", f.TableMapping.Values.Select(v => Alias + "." + "[" + v.ColumnName + "]"));
                 string AppendToQuery = string.Empty;
                 if (OffsetRequired)
                 {
@@ -428,7 +428,7 @@ namespace Dook
             else if (q != null)
             {
                 // assume constant nodes w/ IQueryables are table references
-                string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + "[" +  v + "]"));
+                string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + "[" +  v.ColumnName + "]"));
                 string AppendToQuery = string.Empty;
                 if (OffsetRequired)
                 {

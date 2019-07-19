@@ -53,7 +53,7 @@ namespace Dook
             return DbProvider.GetCommand();
         }
 
-        public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, string> TableMapping) where T : IEntity, new()
+        public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping) where T : IEntity, new()
         {
             if (entity.Id == 0) throw new Exception("Id property must be a positive integer.");
             StringBuilder query = new StringBuilder();
@@ -79,11 +79,11 @@ namespace Dook
                     {
                         us += ", ";
                     }
-                    us += TableMapping[p] + " = @" + p;
+                    us += TableMapping[p].ColumnName + " = @" + p;
                 }
             }
             query.Append(us);
-            query.Append(" WHERE " + TableMapping["Id"] + " = @id;");
+            query.Append(" WHERE " + TableMapping["Id"].ColumnName + " = @id;");
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = query.ToString();
             //MySqlCommand cmd = new MySqlCommand(query.ToString());
@@ -99,7 +99,7 @@ namespace Dook
             return cmd;
         }
 
-        public IDbCommand GetInsertCommand<T>(T entity, string TableName, Dictionary<string, string> TableMapping) where T : IEntity, new()
+        public IDbCommand GetInsertCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping) where T : IEntity, new()
         {
             StringBuilder query = new StringBuilder();
             if (entity is ITrackDateOfCreation)
@@ -134,7 +134,7 @@ namespace Dook
                         fields += ", ";
                         values += ", ";
                     }
-                    fields += TableMapping[p];
+                    fields += TableMapping[p].ColumnName;
                     values += "@" + p;
                 }
             }
@@ -156,16 +156,16 @@ namespace Dook
             return cmd;
         }
 
-        public IDbCommand GetDeleteCommand(int id, string TableName, Dictionary<string, string> TableMapping)
+        public IDbCommand GetDeleteCommand(int id, string TableName, Dictionary<string, ColumnInfo> TableMapping)
         {
-            string queryText = $"DELETE FROM {TableName} WHERE {TableMapping["Id"]} = @id;";
+            string queryText = $"DELETE FROM {TableName} WHERE {TableMapping["Id"].ColumnName} = @id;";
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = queryText;
             SetParameter(cmd, "@id", id);
             return cmd;
         }
 
-        public IDbCommand GetDeleteWhereCommand<T>(Expression<Func<T,bool>> expression, string TableName, Dictionary<string, string> TableMapping)
+        public IDbCommand GetDeleteWhereCommand<T>(Expression<Func<T,bool>> expression, string TableName)
         {
             if (expression == null) throw new ArgumentNullException(nameof(expression), "The provided expression cannot be null.");
             SQLPredicate predicate = Translate(Evaluator.PartialEval(expression));
@@ -180,7 +180,7 @@ namespace Dook
             return cmd;
         }
 
-        public IDbCommand GetDeleteAllCommand(string TableName, Dictionary<string, string> TableMapping)
+        public IDbCommand GetDeleteAllCommand(string TableName)
         {
             string queryText = $"DELETE FROM {TableName};";
             IDbCommand cmd = DbProvider.GetCommand();

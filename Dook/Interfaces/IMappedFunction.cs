@@ -13,6 +13,6 @@ namespace Dook
     {
         Dictionary<int, string> IndexedParameters { get; }
         string FunctionName { get; }
-        Dictionary<string, string> TableMapping { get; }
+        Dictionary<string, ColumnInfo> TableMapping { get; }
     }
 }

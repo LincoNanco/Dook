@@ -10,12 +10,13 @@
     <PackageLicenseUrl>https://github.com/LincoNanco/Dook/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/LincoNanco/Dook</RepositoryUrl>
-    <PackageVersion>1.2.0</PackageVersion>
+    <PackageVersion>1.2.1</PackageVersion>
     <Author>Linco Ñanco</Author>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MySql.Data" Version="8.0.15"/>
     <PackageReference Include="System.Data.SqlClient" Version="4.6.0"/>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0"/>
+    <PackageReference Include="FastMember" Version="1.5.0"/>
   </ItemGroup>
 </Project>

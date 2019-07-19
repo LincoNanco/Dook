@@ -20,7 +20,7 @@ namespace Dook
         public Dictionary<string, int> IndexDictionary = new Dictionary<string, int>(); //To know the index where query results start for a particular Repo/Entity
         public List<string> Parameters = new List<string>();
         public Dictionary<string, Type> RepositoryDictionary = new Dictionary<string, Type>(); //To know which repository is storing query results for which alias.
-        public Dictionary<string, Dictionary<string,string>> TableMappingDictionary = new Dictionary<string, Dictionary<string, string>>(); //To know which repository is storing query results for which alias.
+        public Dictionary<string, Dictionary<string,ColumnInfo>> TableMappingDictionary = new Dictionary<string, Dictionary<string, ColumnInfo>>(); //To know which repository is storing query results for which alias.
         Dictionary<string, int> AddingOrder = new Dictionary<string, int>();
         Dictionary<string, JoinType> JoinTypeDictionary = new Dictionary<string, JoinType>();
         List<SQLPredicate> JoinFilters = new List<SQLPredicate>();
@@ -133,7 +133,7 @@ namespace Dook
             foreach (string p in Parameters)
             {
                 IEntity entity = (IEntity)Activator.CreateInstance(TypeDictionary[p]);
-                foreach (string propertyName in TableMappingDictionary[p].Values)
+                foreach (string propertyName in TableMappingDictionary[p].Values.Select(x => x.ColumnName))
                 {
                     FieldStrings.Add(p + "." + propertyName + " AS " + p + propertyName);
                 }

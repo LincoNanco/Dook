@@ -90,7 +90,7 @@ namespace Dook
             get { return this.QueryProvider; }
         }
 
-        public Dictionary<string, string> TableMapping { get; set; }
+        public Dictionary<string, ColumnInfo> TableMapping { get; set; }
 
         public string FunctionName { get; set; }
 

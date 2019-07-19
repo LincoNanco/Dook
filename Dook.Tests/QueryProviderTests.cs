@@ -34,7 +34,7 @@ namespace Dook.Tests
         {
             MySQLTranslator translator = new MySQLTranslator();
             QueryProvider provider = new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;"));
-            IDbCommand cmd = provider.GetDeleteWhereCommand<TestModel>(expression, "TestModels", Mapper.GetTableMapping<TestModel>());
+            IDbCommand cmd = provider.GetDeleteWhereCommand<TestModel>(expression, "TestModels");
             Assert.Equal(expectedResult, cmd.CommandText);
         } 
 
@@ -46,7 +46,7 @@ namespace Dook.Tests
         {
             MySQLTranslator translator = new MySQLTranslator();
             QueryProvider provider = new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;"));
-            IDbCommand cmd = provider.GetDeleteAllCommand("TestModels", Mapper.GetTableMapping<TestModel>());
+            IDbCommand cmd = provider.GetDeleteAllCommand("TestModels");
             Assert.Equal("DELETE FROM TestModels;", cmd.CommandText);
         } 
 
@@ -71,11 +71,11 @@ namespace Dook.Tests
         public static IEnumerable<object[]> GetUpdateCommandTestsData()
         {
             List<string> properties = new List<string>();
-            Dictionary<string, string> TableMapping = Mapper.GetTableMapping<TestModel>();
+            Dictionary<string, ColumnInfo> TableMapping = Mapper.GetTableMapping<TestModel>();
             foreach (string attributeName in TableMapping.Keys)
             {
                 if (attributeName == "Id" || attributeName == "CreatedOn") continue;
-                properties.Add($"{TableMapping[attributeName]} = @{attributeName}");
+                properties.Add($"{TableMapping[attributeName].ColumnName} = @{attributeName}");
             }
             yield return new object[]
             {
@@ -131,11 +131,11 @@ namespace Dook.Tests
         {
             List<string> properties = new List<string>();
             List<string> values = new List<string>();
-            Dictionary<string, string> TableMapping = Mapper.GetTableMapping<TestModel>();
+            Dictionary<string, ColumnInfo> TableMapping = Mapper.GetTableMapping<TestModel>();
             foreach (string attributeName in TableMapping.Keys)
             {
                 if (attributeName == "Id") continue;
-                properties.Add($"{TableMapping[attributeName]}");
+                properties.Add($"{TableMapping[attributeName].ColumnName}");
                 values.Add($"@{attributeName}");
             }
             yield return new object[]

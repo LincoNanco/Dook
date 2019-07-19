@@ -7,10 +7,10 @@ using Dook.Attributes;
 
 public static class Mapper
 {
-    public static Dictionary<string,string> GetTableMapping<T>()
+    public static Dictionary<string,ColumnInfo> GetTableMapping<T>()
     {
         //getting properties in a specific order
-        Dictionary<string,string> TableMapping = new Dictionary<string,string>();
+        Dictionary<string,ColumnInfo> TableMapping = new Dictionary<string,ColumnInfo>();
         TypeInfo typeInfo = typeof(T).GetTypeInfo();
         List<PropertyInfo> properties = new List<PropertyInfo>(); 
         PropertyInfo idPropertyInfo = typeInfo.GetProperty("Id");
@@ -22,7 +22,7 @@ public static class Mapper
             if (nm == null)
             {
                 ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
-                TableMapping.Add(p.Name, cma != null ? cma.ColumnName : p.Name);
+                TableMapping.Add(p.Name, new ColumnInfo { ColumnName = cma != null ? cma.ColumnName : p.Name, ColumnType = p.PropertyType });
             }
         }
         return TableMapping;

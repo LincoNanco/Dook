@@ -5,6 +5,7 @@ using System.Data;
 using System.Transactions;
 using Dook;
 using System.Linq.Expressions;
+using FastMember;
 
 namespace Dook
 {
@@ -12,6 +13,8 @@ namespace Dook
     {
         public Dictionary<int, T> JoinResults = new Dictionary<int, T>();
         public Exception Exception = null;
+
+        private TypeAccessor accessor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Dook.EntitySet"/> class.
@@ -22,10 +25,16 @@ namespace Dook
 
         }
 
+        private TypeAccessor GetTypeAccessor()
+        {
+            if (accessor == null) accessor = TypeAccessor.Create(typeof(T));
+            return accessor;
+        }
+
 
         public void AddFromReader(IDataReader oReader, int position)
-        {
-            T entity = ObjectReader.GetEntityUsingIndex<T>(oReader, position, TableMapping);
+        { 
+            T entity = ObjectReader.GetEntityUsingIndex<T>(oReader, position, TableMapping, GetTypeAccessor());
             //This if does not allow null entries comming from LEFT or RIGHT joins to be added to DataStore
             if (entity != null && entity.Id > 0)
             {
@@ -112,9 +121,18 @@ namespace Dook
         /// <summary>
         /// Deletes all entities of type <typeparamref name="T"/>
         /// </summary>
+        public void DeleteWhere(Expression<Func<T,bool>> expression)
+        {
+            IDbCommand cmd = QueryProvider.GetDeleteWhereCommand(expression, TableName);
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Deletes all entities of type <typeparamref name="T"/>
+        /// </summary>
         public void DeleteAll()
         {
-            IDbCommand cmd = QueryProvider.GetDeleteAllCommand(TableName, TableMapping);
+            IDbCommand cmd = QueryProvider.GetDeleteAllCommand(TableName);
             cmd.ExecuteNonQuery();
         }
 
