@@ -12,7 +12,9 @@ namespace Dook
         public IDbConnection Connection;
         public IDbTransaction Transaction;
 
-        public DbProvider(DbType dbType, string connectionString)
+        int? CommandTimeout;
+
+        public DbProvider(DbType dbType, string connectionString, int? CommandTimeout = null)
         {
             DbType = dbType;
             ConnectionString = connectionString;
@@ -35,6 +37,7 @@ namespace Dook
                     throw new Exception("Unsuported database provider.");
             }
             DbCommand.Connection = Connection;
+            if (CommandTimeout != null) DbCommand.CommandTimeout = (int) CommandTimeout;
             return DbCommand;
         }
 

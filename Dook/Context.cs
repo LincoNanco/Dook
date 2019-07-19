@@ -19,7 +19,7 @@ namespace Dook
         {
             DbType = configuration.DatabaseType;
             ConnectionString = configuration.ConnectionString;
-            DbProvider = new DbProvider(DbType, ConnectionString);
+            DbProvider = new DbProvider(DbType, ConnectionString, configuration.CommandTimeout);
             JoinProvider = new JoinProvider(DbProvider);
             QueryProvider = new QueryProvider(DbProvider);
             DbProvider.Connection.Open();
