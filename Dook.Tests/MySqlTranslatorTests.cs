@@ -32,7 +32,25 @@ namespace Dook.Tests
             yield return new object[]
             {
                 query3,
-                "SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t ORDER BY t.StringProperty) AS t WHERE (t.EnumProperty = @P0)"
+                "SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t ORDER BY t.StringProperty) AS t WHERE (t.EnumProperty = @P0)"
+            };
+            IQueryable<TestModel> query4 = queryObject.Where(t => t.StringProperty == "Test").Where(t => t.EnumProperty == TestEnum.One);
+            yield return new object[]
+            {
+                query4,
+                "SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.StringProperty = @P0)) AS t WHERE (t.EnumProperty = @P1)"
+            };
+            IQueryable<TestModel> query5 = queryObject.Where(t => t.StringProperty == "Test").Where(t => t.EnumProperty == TestEnum.One).Take(1);
+            yield return new object[]
+            {
+                query5,
+                "SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.StringProperty = @P0)) AS t WHERE (t.EnumProperty = @P1) LIMIT 1"
+            };
+            IQueryable<TestModel> query6 = queryObject.Where(t => t.StringProperty == "Test").OrderByDescending(t => t.StringProperty).Where(t => t.EnumProperty == TestEnum.One).Take(1);
+            yield return new object[]
+            {
+                query6,
+                "SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.StringProperty = @P0) ORDER BY t.StringProperty DESC ) AS t WHERE (t.EnumProperty = @P1) LIMIT 1"
             };
         }
         [Theory, MemberData("QueryTestsData")]
@@ -40,6 +58,7 @@ namespace Dook.Tests
         {
             MySQLTranslator translator = new MySQLTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);
+            Console.WriteLine(Sql.Sql);
             Assert.Equal(expectedResult, Sql.Sql);
         }  
 

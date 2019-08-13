@@ -17,7 +17,9 @@ namespace Dook
         SQLPredicate predicate;
         int Initial;
         string Alias = "x";
-        bool HasPredicate;
+        bool HasOrderBy;
+        bool HasWhere;
+        bool HasGroupBy;
 
         internal MySQLTranslator()
         {
@@ -25,7 +27,9 @@ namespace Dook
 
         public SQLPredicate Translate(Expression expression, int initial = 0)
         {
-            HasPredicate = false;
+            HasOrderBy = false;
+            HasWhere = false;
+            HasGroupBy = false;
             Initial = initial;
             sb = new StringBuilder();
             predicate = new SQLPredicate();
@@ -45,17 +49,18 @@ namespace Dook
 
         protected override Expression VisitMethodCall(MethodCallExpression m)
         {
-            bool IsSecondPredicate = HasPredicate;
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Where")
             {
-                if (IsSecondPredicate) sb.Append("SELECT * FROM (");
+                bool Nested = HasWhere;
+                if (Nested) sb.Append("SELECT * FROM (");
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
+                HasWhere = true;
                 this.Visit(m.Arguments[0]);
-                if (IsSecondPredicate) sb.Append(") AS " + Alias);
                 sb.Append(" WHERE ");
                 this.Visit(lambda.Body);
-                IsSecondPredicate = true;
+                HasWhere = false;
+                if (Nested) sb.Append(") AS " + Alias);
                 return m;
             }
 
@@ -64,19 +69,20 @@ namespace Dook
 
                 if (m.Arguments.Count == 1)
                 {
-                    if (IsSecondPredicate) sb.Append("SELECT * FROM (");
+                    // if (IsSecondPredicate) sb.Append("SELECT * FROM (");
                     this.Visit(m.Arguments[0]);
-                    if (IsSecondPredicate) sb.Append(") AS " + Alias);
+                    // if (IsSecondPredicate) sb.Append(") AS " + Alias);
                     sb.Append(" LIMIT 1 ");
+                    // IsSecondPredicate = false;
                     return m;
                 }
                 else
                 {
                     LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
-                    if (IsSecondPredicate) sb.Append("SELECT * FROM (");
+                    // if (IsSecondPredicate) sb.Append("SELECT * FROM (");
                     Alias = lambda.Parameters[0].Name;
                     this.Visit(m.Arguments[0]);
-                    if (IsSecondPredicate) sb.Append(") AS " + Alias);
+                    // if (IsSecondPredicate) sb.Append(") AS " + Alias);
                     sb.Append(" WHERE ");
                     this.Visit(lambda.Body);
                     sb.Append(" LIMIT 1 ");
@@ -91,7 +97,7 @@ namespace Dook
                     sb.Append("SELECT COUNT(*) FROM (");
                     this.Visit(m.Arguments[0]);
                     sb.Append(") AS " + Alias);
-                    IsSecondPredicate = true;
+                    // IsSecondPredicate = true;
                     return m;
                 }
                 else
@@ -103,7 +109,7 @@ namespace Dook
                     sb.Append(") AS " + Alias);
                     sb.Append(" WHERE ");
                     this.Visit(lambda.Body);
-                    IsSecondPredicate = true;
+                    // IsSecondPredicate = true;
                     return m;
                 }
             }
@@ -122,7 +128,7 @@ namespace Dook
                     this.Visit(m.Arguments[0]);
                     // if (IsSecondPredicate) sb.Append(") AS " + Alias);
                     sb.Append(") AS " + Alias);
-                    IsSecondPredicate = true;
+                    // IsSecondPredicate = true;
                     return m;
                 }
                 else
@@ -154,7 +160,7 @@ namespace Dook
                     Alias = lambda.Parameters[0].Name;
                     this.Visit(m.Arguments[0]);
                     sb.Append(") AS " + Alias);
-                    IsSecondPredicate = true;
+                    // IsSecondPredicate = true;
                     return m;
                 }
                 else
@@ -170,21 +176,21 @@ namespace Dook
                     sb.Append("SELECT EXISTS(");
                     this.Visit(m.Arguments[0]);
                     sb.Append(")");
-                    IsSecondPredicate = true;
+                    // IsSecondPredicate = true;
                     return m;
                 }
                 else
                 {
                     sb.Append("SELECT EXISTS(");
-                    if (IsSecondPredicate) sb.Append("SELECT * FROM (");
+                    // if (IsSecondPredicate) sb.Append("SELECT * FROM (");
                     LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                     Alias = lambda.Parameters[0].Name;
                     this.Visit(m.Arguments[0]);
-                    if (IsSecondPredicate) sb.Append(") AS " + Alias);
+                    // if (IsSecondPredicate) sb.Append(") AS " + Alias);
                     sb.Append(" WHERE ");
                     this.Visit(lambda.Body);
                     sb.Append(")");
-                    IsSecondPredicate = true;
+                    // IsSecondPredicate = true;
                     return m;
                 }
             }
@@ -207,9 +213,15 @@ namespace Dook
             {
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
+                bool Nested = HasWhere || HasOrderBy || HasGroupBy;
+                if (Nested) sb.Append("SELECT * FROM (");
+                HasWhere = false;
+                HasOrderBy = true;
                 this.Visit(m.Arguments[0]);
                 sb.Append(" ORDER BY ");
                 this.Visit(lambda.Body);
+                HasOrderBy = false;
+                if (Nested) sb.Append(") AS " + Alias);
                 return m;
             }
 
@@ -227,10 +239,16 @@ namespace Dook
             {
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Alias = lambda.Parameters[0].Name;
+                bool Nested = HasWhere || HasGroupBy || HasOrderBy;
+                if (Nested) sb.Append("SELECT * FROM (");
+                HasWhere = false;
+                HasOrderBy = true;
                 this.Visit(m.Arguments[0]);
                 sb.Append(" ORDER BY ");
                 this.Visit(lambda.Body);
                 sb.Append(" DESC ");
+                HasOrderBy = false;
+                if (Nested) sb.Append(") AS " + Alias);
                 return m;
             }
 
