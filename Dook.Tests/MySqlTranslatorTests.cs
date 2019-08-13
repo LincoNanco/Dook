@@ -28,6 +28,12 @@ namespace Dook.Tests
                 query2,
                 "SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE ( NOT t.BoolProperty AND (t.EnumProperty = @P0))"
             };
+            IQueryable<TestModel> query3 = queryObject.OrderBy(t => t.StringProperty).Where(t => t.EnumProperty == TestEnum.One);
+            yield return new object[]
+            {
+                query3,
+                "SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t ORDER BY t.StringProperty) AS t WHERE (t.EnumProperty = @P0)"
+            };
         }
         [Theory, MemberData("QueryTestsData")]
         public void QueryTests(IQueryable<TestModel> query, string expectedResult)
