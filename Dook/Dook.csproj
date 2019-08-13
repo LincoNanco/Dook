@@ -11,7 +11,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/LincoNanco/Dook</RepositoryUrl>
     <PackageVersion>1.2.3</PackageVersion>
-    <Author>Linco Ñanco</Author>
+    <Authors>Linco Ñanco</Authors>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MySql.Data" Version="8.0.15"/>
