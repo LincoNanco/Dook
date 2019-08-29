@@ -14,26 +14,54 @@ namespace Dook.Tests
         /// DeleteWhere tests
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<object[]> GetDeleteWhereTestsData()
+        public static IEnumerable<object[]> GetSqlDeleteWhereTestsData()
         {
             Expression<Func<TestModel,bool>> e1 = t => t.StringProperty.Contains("Test");
             yield return new object[]
             {
                 e1,
-                "DELETE FROM TestModels as t WHERE t.[StringProperty] LIKE @P0;"
+                "DELETE FROM TestModels WHERE [StringProperty] LIKE @P0;"
             };
             Expression<Func<TestModel,bool>> e2 = t => t.Id > 2 && t.CreatedOn < new DateTime(2019,05,05);
             yield return new object[]
             {
                 e2,
-                "DELETE FROM TestModels as t WHERE ((t.[Id] > @P0) AND (t.[CreatedOn] < @P1));"
+                "DELETE FROM TestModels WHERE (([Id] > @P0) AND ([CreatedOn] < @P1));"
             };
         }
-        [Theory, MemberData("GetDeleteWhereTestsData")]
-        public void GetDeleteWhereTest(Expression<Func<TestModel,bool>> expression, string expectedResult)
+
+        [Theory, MemberData("GetSqlDeleteWhereTestsData")]
+        public void GetSqlDeleteWhereTest(Expression<Func<TestModel,bool>> expression, string expectedResult)
         {
-            MySQLTranslator translator = new MySQLTranslator();
             QueryProvider provider = new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;"));
+            IDbCommand cmd = provider.GetDeleteWhereCommand<TestModel>(expression, "TestModels");
+            Assert.Equal(expectedResult, cmd.CommandText);
+        } 
+
+               /// <summary>
+        /// DeleteWhere tests
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object[]> GetMySqlDeleteWhereTestsData()
+        {
+            Expression<Func<TestModel,bool>> e1 = t => t.StringProperty.Contains("Test");
+            yield return new object[]
+            {
+                e1,
+                "DELETE FROM TestModels WHERE StringProperty LIKE @P0;"
+            };
+            Expression<Func<TestModel,bool>> e2 = t => t.Id > 2 && t.CreatedOn < new DateTime(2019,05,05);
+            yield return new object[]
+            {
+                e2,
+                "DELETE FROM TestModels WHERE ((Id > @P0) AND (CreatedOn < @P1));"
+            };
+        }
+        
+        [Theory, MemberData("GetMySqlDeleteWhereTestsData")]
+        public void GetMySqlDeleteWhereTest(Expression<Func<TestModel,bool>> expression, string expectedResult)
+        {
+            QueryProvider provider = new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;"));
             IDbCommand cmd = provider.GetDeleteWhereCommand<TestModel>(expression, "TestModels");
             Assert.Equal(expectedResult, cmd.CommandText);
         } 

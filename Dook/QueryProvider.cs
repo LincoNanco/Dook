@@ -30,10 +30,10 @@ namespace Dook
         /// <returns>The sql query.</returns>
         /// <param name="expression">The LINQ Expression to be translated.</param>
         /// <typeparam name="T">The 1st type parameter.</typeparam>
-        private SQLPredicate Translate(Expression expression)
+        private SQLPredicate Translate(Expression expression, bool ignoreAliases = false)
         {   
             ISQLTranslator sql = SQLTranslatorFactory.GetTranslator(DbType);
-            SQLPredicate pred = sql.Translate(Evaluator.PartialEval(expression));
+            SQLPredicate pred = sql.Translate(Evaluator.PartialEval(expression), 0, ignoreAliases);
             return pred;
         }
 
@@ -168,12 +168,10 @@ namespace Dook
         public IDbCommand GetDeleteWhereCommand<T>(Expression<Func<T,bool>> expression, string TableName)
         {
             if (expression == null) throw new ArgumentNullException(nameof(expression), "The provided expression cannot be null.");
-            SQLPredicate predicate = Translate(Evaluator.PartialEval(expression));
+            SQLPredicate predicate = Translate(Evaluator.PartialEval(expression), true);
             LambdaExpression lambda = (LambdaExpression) expression;//for getting alias
             StringBuilder query = new StringBuilder();
-            query.Append("DELETE FROM ");
-            query.Append($"{TableName} as {lambda.Parameters[0].Name}");
-            query.Append($" WHERE {predicate.Sql};");
+            query.Append($"DELETE FROM {TableName} WHERE {predicate.Sql};");
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = query.ToString();
             predicate.SetParameters(cmd);

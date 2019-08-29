@@ -5,6 +5,6 @@ namespace Dook
 {
     public interface ISQLTranslator
     {
-        SQLPredicate Translate(Expression expression, int initial = 0);
+        SQLPredicate Translate(Expression expression, int initial = 0, bool ignoreAliases = false);
     }
 }

@@ -24,6 +24,7 @@ namespace Dook
         bool IsNested;
         bool OffsetRequired;
         bool OrderByRequired;
+        bool IgnoreAliases;
 
         public void ResetClauses()
         {
@@ -33,8 +34,9 @@ namespace Dook
             OrderByRequired = false;
         }
 
-        public SQLPredicate Translate(Expression expression, int initial = 0)
+        public SQLPredicate Translate(Expression expression, int initial = 0, bool ignoreAliases = false)
         {
+            IgnoreAliases = ignoreAliases;
             IsNested = false;
             ResetClauses();
             Initial = initial;
@@ -498,7 +500,14 @@ namespace Dook
                 var property = (PropertyInfo)m.Member;
                 ColumnNameAttribute Column = entity.GetType().GetTypeInfo().GetProperty(property.Name).GetCustomAttribute<ColumnNameAttribute>();
                 string ColumnName = Column == null ? entity.GetType().GetProperty(property.Name).Name : Column.ColumnName;
-                sb.Append(m.Expression + "." + "[" + ColumnName + "]");
+                if (IgnoreAliases)
+                {
+                    sb.Append("[" + ColumnName + "]");
+                }
+                else
+                {
+                    sb.Append(m.Expression + "." + "[" + ColumnName + "]");
+                }
                 return m;
             }
             if (m.Expression != null && (m.Expression.NodeType == ExpressionType.Constant || m.Expression.NodeType == ExpressionType.MemberAccess))
