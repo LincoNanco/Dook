@@ -41,11 +41,11 @@ You can decorate your class to map it according to your database naming conventi
 [TableName("examples")]
 public class Example : IEntity
 {
-    [TableName("id")]
+    [ColumnName("id")]
     public int Id { get; set; }
-    [TableName("int_property")]
+    [ColumnName("int_property")]
     public int IntProperty { get; set; }
-    [TableName("string_property")]
+    [ColumnName("string_property")]
     public string StringProperty { get; set; }
 }
 ```
@@ -104,19 +104,21 @@ List<Example> examples = _context.ExampleRepository.Where(x => x.IntProperty >= 
 _context.ExampleRepository.Insert(example);
 _context.SaveChanges();
 ```
+**Note**: this assumes the Id field is an autoincremental PK on database. After running the **Insert** command, the object will receive a new Id from database.
 #### Updating data
 
 ```csharp
 _context.ExampleRepository.Update(example);
 _context.SaveChanges();
 ```
-
+**Note**: this will work only if the updated object has a valid Id (distinct from zero).
 #### Deleting data
 
 ```csharp
 _context.ExampleRepository.Delete(example);
 _context.SaveChanges();
 ```
+**Note**: this will work only if the deleted object has a valid Id (distinct from zero).
 **Important**: **insert**, **update** and **delete** commands are run inside a transaction. Always remember to call the *SaveChanges()*. Otherwise, the transaction will be rolled back.
 
 ### 
