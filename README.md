@@ -54,7 +54,7 @@ Second, lets derive a *Context* class. This class is intended to manage the **co
 ```csharp
 public class MyContext : Context
 {
-        public DispatcherContext(DookConfigurationOptions<MyContext> configurationOptions) : base(configurationOptions)
+        public MyContext(DookConfigurationOptions<MyContext> configurationOptions) : base(configurationOptions)
         {
 
         }
@@ -68,7 +68,7 @@ public class MyContext : Context
         //Always declare your EntitySets as properties
         public EntitySet<Example> ExampleRepository { get; set; }
 
-        public DispatcherContext(DookConfigurationOptions<MyContext> configurationOptions) : base(configurationOptions)
+        public MyContextContext(DookConfigurationOptions<MyContext> configurationOptions) : base(configurationOptions)
         {
             ExampleRepository = new EntitySet<Example>(QueryProvider);
         }
