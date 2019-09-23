@@ -35,10 +35,10 @@ namespace Dook
         public void Join<T1, T2>(Expression<Func<T1,T2,bool>> expression, EntitySet<T1> T1Repository = null, EntitySet<T2> T2Repository = null) where T1 : class, IEntity, new() where T2 : class, IEntity, new()
         {
             PropertyInfo p1 = GetType().GetProperty(typeof(T1).Name + Suffix);
-            if (p1 == null) throw new Exception($"A repository named {typeof(T1).Name + Suffix} must be declared and instanced into your Context derived class.");
+            if (p1 == null) throw new Exception($"A repository named {typeof(T1).Name + Suffix} must be declared and instanced into {this.GetType().Name}.");
             EntitySet<T1> Repository1 = (EntitySet<T1>)p1.GetValue(this);
             PropertyInfo p2 = GetType().GetProperty(typeof(T2).Name + Suffix);
-            if (p2 == null) throw new Exception($"A repository named {typeof(T2).Name + Suffix} must be declared and instanced into your Context derived class.");
+            if (p2 == null) throw new Exception($"A repository named {typeof(T2).Name + Suffix} must be declared and instanced into {this.GetType().Name}.");
             EntitySet<T2> Repository2 = (EntitySet<T2>)p2.GetValue(this);
             JoinProvider.Join(JoinType.Inner, expression, Repository1, Repository2);
         }
@@ -46,10 +46,10 @@ namespace Dook
         public void RightJoin<T1, T2>(Expression<Func<T1, T2, bool>> expression, EntitySet<T1> T1Repository = null, EntitySet<T2> T2Repository = null) where T1 : class, IEntity, new() where T2 : class, IEntity, new()
         {
             PropertyInfo p1 = GetType().GetProperty(typeof(T1).Name + Suffix);
-            if (p1 == null) throw new Exception($"A repository named {typeof(T1).Name + Suffix} must be declared and instanced into your Context derived class.");
+            if (p1 == null) throw new Exception($"A repository named {typeof(T1).Name + Suffix} must be declared and instanced into {this.GetType().Name}.");
             EntitySet<T1> Repository1 = (EntitySet<T1>)p1.GetValue(this);
             PropertyInfo p2 = GetType().GetProperty(typeof(T2).Name + Suffix);
-            if (p2 == null) throw new Exception($"A repository named {typeof(T2).Name + Suffix} must be declared and instanced into your Context derived class.");
+            if (p2 == null) throw new Exception($"A repository named {typeof(T2).Name + Suffix} must be declared and instanced into {this.GetType().Name}.");
             EntitySet<T2> Repository2 = (EntitySet<T2>)p2.GetValue(this);
             JoinProvider.Join(JoinType.Right, expression, Repository1, Repository2);
         }
@@ -57,10 +57,10 @@ namespace Dook
         public void LeftJoin<T1, T2>(Expression<Func<T1, T2, bool>> expression, EntitySet<T1> T1Repository = null, EntitySet<T2> T2Repository = null) where T1 : class, IEntity, new() where T2 : class, IEntity, new()
         {
             PropertyInfo p1 = GetType().GetProperty(typeof(T1).Name + Suffix);
-            if (p1 == null) throw new Exception($"A repository named {typeof(T1).Name + Suffix} must be declared and instanced into your Context derived class.");
+            if (p1 == null) throw new Exception($"A repository named {typeof(T1).Name + Suffix} must be declared and instanced into {this.GetType().Name}.");
             EntitySet<T1> Repository1 = (EntitySet<T1>)p1.GetValue(this);
             PropertyInfo p2 = GetType().GetProperty(typeof(T2).Name + Suffix);
-            if (p2 == null) throw new Exception($"A repository named {typeof(T2).Name + Suffix} must be declared and instanced into your Context derived class.");
+            if (p2 == null) throw new Exception($"A repository named {typeof(T2).Name + Suffix} must be declared and instanced into {this.GetType().Name}.");
             EntitySet<T2> Repository2 = (EntitySet<T2>)p2.GetValue(this);
             JoinProvider.Join(JoinType.Left, expression, Repository1, Repository2);
         }
