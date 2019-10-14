@@ -171,6 +171,70 @@ namespace Dook
                 }
             }
 
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Max")
+            {
+                if (m.Arguments.Count > 1)
+                {
+                    LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                    sb.Append("SELECT MAX(");
+                    if (lambda.Body.CanReduce)
+                    {
+                        BlockExpression e =  (BlockExpression) lambda.Body.Reduce();
+                        for (int i = 1; i < e.Expressions.Count - 1; i++)
+                        {
+                            this.Visit(((BinaryExpression)e.Expressions[i]).Right);
+                            if (i < e.Expressions.Count - 2) sb.Append(", ");
+                        }
+                    } 
+                    else
+                    {
+                        this.Visit(lambda.Body);
+                    }
+                    sb.Append(") FROM (");
+                    Alias = lambda.Parameters[0].Name;
+                    this.Visit(m.Arguments[0]);
+                    sb.Append(") AS " + Alias);
+                    // IsSecondPredicate = true;
+                    return m;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Min")
+            {
+                if (m.Arguments.Count > 1)
+                {
+                    LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                    sb.Append("SELECT MIN(");
+                    if (lambda.Body.CanReduce)
+                    {
+                        BlockExpression e =  (BlockExpression) lambda.Body.Reduce();
+                        for (int i = 1; i < e.Expressions.Count - 1; i++)
+                        {
+                            this.Visit(((BinaryExpression)e.Expressions[i]).Right);
+                            if (i < e.Expressions.Count - 2) sb.Append(", ");
+                        }
+                    } 
+                    else
+                    {
+                        this.Visit(lambda.Body);
+                    }
+                    sb.Append(") FROM (");
+                    Alias = lambda.Parameters[0].Name;
+                    this.Visit(m.Arguments[0]);
+                    sb.Append(") AS " + Alias);
+                    // IsSecondPredicate = true;
+                    return m;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
             if (m.Method.DeclaringType == typeof(Queryable) && m.Method.Name == "Any")
             {
                 if (m.Arguments.Count == 1)
