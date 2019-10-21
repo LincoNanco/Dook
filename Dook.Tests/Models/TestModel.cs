@@ -1,4 +1,5 @@
 using System;
+using Dook.Attributes;
 
 namespace Dook.Tests.Models
 {
@@ -11,6 +12,8 @@ namespace Dook.Tests.Models
         public DateTime DateTimeProperty { get; set; }
         public string StringProperty { get; set; }
         public TestEnum EnumProperty { get; set; }
+        [NotMapped]
+        public int NotMappedInt { get; set; }
     }
 
     public enum TestEnum
