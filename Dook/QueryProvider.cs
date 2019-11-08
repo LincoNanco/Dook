@@ -220,7 +220,7 @@ namespace Dook
             SQLPredicate sql = Translate(expression);
             cmd.CommandText = sql.Sql;
             sql.SetParameters(cmd);
-            cmd.Connection = DbProvider.Connection;
+            // cmd.Connection = DbProvider.Connection; eliminating this because DbProvider already passes its connection to cmd
             try
             {
                 IDataReader reader = cmd.ExecuteReader();
