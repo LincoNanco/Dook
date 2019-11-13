@@ -38,7 +38,7 @@ namespace Dook
             sb = new StringBuilder();
             predicate = new SQLPredicate();
             Visit(expression);
-            predicate.Sql = $"{ProcedureCall} {sb.ToString()}";
+            predicate.Sql = $"{ProcedureCall}{sb.ToString()}";
             return predicate;
         }
 
@@ -435,7 +435,7 @@ namespace Dook
                     fpCount++;
                 }
                 string fields = String.Join(", ", f.TableMapping.Values.Select(v => Alias + "." + v.ColumnName));
-                ProcedureCall = $"CALL {f.FunctionName} ({String.Join(",", parameters)});";
+                ProcedureCall = $"CALL {f.FunctionName} ({String.Join(",", parameters)}); ";
                 sb.Append($"SELECT {fields} FROM Temp{f.FunctionName} AS {Alias}");
                 Type type = f.ElementType;
             }

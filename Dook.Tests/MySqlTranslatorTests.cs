@@ -51,7 +51,7 @@ namespace Dook.Tests
             {
                 query6,
                 "SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.StringProperty = @P0) ORDER BY t.StringProperty DESC ) AS t WHERE (t.EnumProperty = @P1) LIMIT 1"
-            };
+            };            
         }
         [Theory, MemberData("QueryTestsData")]
         public void QueryTests(IQueryable<TestModel> query, string expectedResult)
@@ -60,7 +60,38 @@ namespace Dook.Tests
             SQLPredicate Sql = translator.Translate(query.Expression);
             Console.WriteLine(Sql.Sql);
             Assert.Equal(expectedResult, Sql.Sql);
-        }  
+        } 
+
+                /// <summary>
+        /// Testing query translation
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object[]> FunctionTestsData()
+        {          
+            TestFunction testFunction = new TestFunction(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            testFunction.Parameter0 = "Val0";
+            testFunction.Parameter1 = "Val1";
+            IQueryable<TestFunctionModel> query1 = testFunction;
+            yield return new object[]
+            {
+                query1,
+                "CALL FakeProcedure (@FP0,@FP1); SELECT x.Id, x.BoolProperty, x.CreatedOn, x.DateTimeProperty, x.EnumProperty, x.StringProperty, x.UpdatedOn FROM TempFakeProcedure AS x"
+            };
+            IQueryable<TestFunctionModel> query2 = testFunction.Where(t => t.StringProperty == "Test").OrderByDescending(t => t.StringProperty).Where(t => t.EnumProperty == TestEnum.One).Take(1);
+            yield return new object[]
+            {
+                query2,
+                "CALL FakeProcedure (@FP0,@FP1); SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TempFakeProcedure AS t WHERE (t.StringProperty = @P2) ORDER BY t.StringProperty DESC ) AS t WHERE (t.EnumProperty = @P3) LIMIT 1"
+            };
+        }
+        [Theory, MemberData("FunctionTestsData")]
+        public void FunctionTests(IQueryable<TestFunctionModel> query, string expectedResult)
+        {
+            MySQLTranslator translator = new MySQLTranslator();
+            SQLPredicate Sql = translator.Translate(query.Expression);
+            Console.WriteLine(Sql.Sql);
+            Assert.Equal(expectedResult, Sql.Sql);
+        }   
 
         
         [Fact]
