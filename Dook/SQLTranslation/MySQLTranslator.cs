@@ -435,7 +435,7 @@ namespace Dook
                     fpCount++;
                 }
                 string fields = String.Join(", ", f.TableMapping.Values.Select(v => Alias + "." + v.ColumnName));
-                ProcedureCall = $"CALL {f.FunctionName} ({String.Join(",", parameters)}) AS {Alias};";
+                ProcedureCall = $"CALL {f.FunctionName} ({String.Join(",", parameters)});";
                 sb.Append($"SELECT {fields} FROM Temp{f.FunctionName} AS {Alias}");
                 Type type = f.ElementType;
             }
