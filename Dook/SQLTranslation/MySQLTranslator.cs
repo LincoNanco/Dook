@@ -21,6 +21,7 @@ namespace Dook
         bool HasWhere;
         bool HasGroupBy;
         bool IgnoreAliases;
+        string ProcedureCall;
 
         internal MySQLTranslator()
         {
@@ -32,11 +33,12 @@ namespace Dook
             HasOrderBy = false;
             HasWhere = false;
             HasGroupBy = false;
+            ProcedureCall = string.Empty;
             Initial = initial;
             sb = new StringBuilder();
             predicate = new SQLPredicate();
             Visit(expression);
-            predicate.Sql = sb.ToString();
+            predicate.Sql = $"{ProcedureCall} {sb.ToString()}";
             return predicate;
         }
 
@@ -433,14 +435,15 @@ namespace Dook
                     fpCount++;
                 }
                 string fields = String.Join(", ", f.TableMapping.Values.Select(v => Alias + "." + v.ColumnName));
-                sb.Append("SELECT " + fields + " FROM " + f.FunctionName + "(" + String.Join(",", parameters) + ") AS " + Alias);
+                ProcedureCall = $"CALL {f.FunctionName} ({String.Join(",", parameters)}) AS {Alias};";
+                sb.Append($"SELECT {fields} FROM Temp{f.FunctionName} AS {Alias}");
                 Type type = f.ElementType;
             }
             else if (q != null)
             {
                 // assume constant nodes w/ IMappedQueryable are table references
                 string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + v.ColumnName));
-                sb.Append("SELECT " + fields + " FROM " + q.TableName + " AS " + Alias);
+                sb.Append($"SELECT {fields} FROM {q.TableName} AS {Alias}");
                 Type type = q.ElementType;
             }
             else if (s != null)
