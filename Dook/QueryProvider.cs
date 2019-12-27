@@ -218,6 +218,12 @@ namespace Dook
         {
             IDbCommand cmd = DbProvider.GetCommand();
             SQLPredicate sql = Translate(expression);
+            Console.WriteLine($"Executed Query: {sql.Sql}");
+            Console.WriteLine($"Query Parameters:");
+            foreach(KeyValuePair<string,object> kvp in sql.Parameters)
+            {
+                Console.WriteLine($"{kvp.Key} : {kvp.Value.ToString()}");
+            }
             cmd.CommandText = sql.Sql;
             sql.SetParameters(cmd);
             // cmd.Connection = DbProvider.Connection; eliminating this because DbProvider already passes its connection to cmd

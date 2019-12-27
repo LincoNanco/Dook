@@ -51,7 +51,15 @@ namespace Dook.Tests
             {
                 query6,
                 "SELECT * FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.StringProperty = @P0) ORDER BY t.StringProperty DESC ) AS t WHERE (t.EnumProperty = @P1) LIMIT 1"
-            };            
+            };  
+            DateTime date = DateTime.Now.Date;
+            DateTime queryDate = DateTime.Now.Date.AddDays(-10);
+            IQueryable<TestModel> query7 = queryObject.Where(t => t.DateTimeProperty >= queryDate);
+            yield return new object[]
+            {
+                query7,
+                $"SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.DateTimeProperty >= @P0)"
+            };                
         }
         [Theory, MemberData("QueryTestsData")]
         public void QueryTests(IQueryable<TestModel> query, string expectedResult)
