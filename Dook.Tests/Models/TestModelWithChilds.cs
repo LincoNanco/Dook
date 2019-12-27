@@ -1,9 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Dook.Attributes;
 
 namespace Dook.Tests.Models
 {
-    public class TestModel : IEntityAuditable
+    public class TestModelWithChilds : IEntityAuditable
     {
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
@@ -12,15 +13,12 @@ namespace Dook.Tests.Models
         public DateTime DateTimeProperty { get; set; }
         public string StringProperty { get; set; }
         public TestEnum EnumProperty { get; set; }
+
+        [InvertedProperty("TestModelProp")]
+        public List<ChildModel> ChildModels { get; set; }
         
         [NotMapped]
         public int NotMappedInt { get; set; }
     }
 
-    public enum TestEnum
-    {
-        One,
-        Two,
-        Three
-    }
 }

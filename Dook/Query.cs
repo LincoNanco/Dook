@@ -49,8 +49,7 @@ namespace Dook
         private void GetTableData()
         {
             TableMapping = Mapper.GetTableMapping<T>();
-            TableNameAttribute tableNameAtt = typeof(T).GetTypeInfo().GetCustomAttribute<TableNameAttribute>();
-            TableName = tableNameAtt != null ? tableNameAtt.TableName : typeof(T).Name + "s";
+            TableName = Mapper.GetTableName<T>();
             alias = TableName.First().ToString().ToLower();
         }
 

@@ -22,6 +22,8 @@ namespace Dook
         bool HasGroupBy;
         bool IgnoreAliases;
         string ProcedureCall;
+        
+        HashSet<string> FilteredChildObject;
 
         internal MySQLTranslator()
         {
@@ -29,6 +31,7 @@ namespace Dook
 
         public SQLPredicate Translate(Expression expression, int initial = 0, bool ignoreAliases = false)
         {
+            FilteredChildObject = new HashSet<string>();
             IgnoreAliases = ignoreAliases;
             HasOrderBy = false;
             HasWhere = false;
@@ -328,6 +331,36 @@ namespace Dook
                 sb.Append(" ,");
                 this.Visit(lambda.Body);
                 sb.Append(" DESC ");
+                return m;
+            }
+
+            if (m.Method.Name == "Include")
+            {
+                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                string childTableName = Mapper.GetTableName(lambda.ReturnType.GenericTypeArguments[0]);
+                string tableName = Mapper.GetTableName(m.Arguments[0].Type.GenericTypeArguments[0]);
+                Dictionary<string, ColumnInfo> mapping = Mapper.GetTableMapping(m.Arguments[0].Type.GenericTypeArguments[0]);
+                Dictionary<string, ColumnInfo> childMapping = Mapper.GetTableMapping(lambda.ReturnType.GenericTypeArguments[0]);
+                this.Visit(m.Arguments[0]);
+                MemberExpression member = (MemberExpression) lambda.Body;
+
+                //TODO: check the type of relationship between the classes by checking InvertedProperty, ManyToMany and ForeignKey attributes. If no one is declared, throw an exception
+                InvertedPropertyAttribute ipa = member.Member.GetCustomAttribute<InvertedPropertyAttribute>();
+                ForeignKeyAttribute fka = member.Member.GetCustomAttribute<ForeignKeyAttribute>();
+                ManyToManyAttribute mtm = member.Member.GetCustomAttribute<ManyToManyAttribute>();
+                if (ipa == null && fka == null && mtm == null) throw new Exception($"No relationship attribute (InvertedProperty, ForeignKey or ManyToMany) declared for property {member.Member.Name}. Cannot invoke Include method for this property.");
+
+                sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
+                return m;
+            }
+
+            if (m.Method.Name == "ThenInclude")
+            {
+                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                this.Visit(m.Arguments[0]);
+                sb.Append(" LEFT JOIN ");
+                this.Visit(lambda.Body);
+                sb.Append(" AS  asdf");
                 return m;
             }
 

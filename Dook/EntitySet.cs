@@ -9,7 +9,7 @@ using FastMember;
 
 namespace Dook
 {
-    public class EntitySet<T> : Query<T> where T : class, IEntity, new()
+    public class EntitySet<T> : Query<T>, IPropertyIncluded<T> where T : class, IEntity, new()
     {
         public Dictionary<int, T> JoinResults = new Dictionary<int, T>();
         public Exception Exception = null;
@@ -49,6 +49,17 @@ namespace Dook
         {
             JoinResults = new Dictionary<int, T>();
         }
+
+        /// <summary>
+        /// Call this method to include child object data retrieved from database.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        private IQueryable<T> Include<TKey>(IQueryable<T> query, Func<T,TKey> selector)
+        {
+            return this;
+        }
+
+
 
         /// <summary>
         /// Updates the specified entity.

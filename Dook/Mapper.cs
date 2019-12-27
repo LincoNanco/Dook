@@ -7,15 +7,30 @@ using Dook.Attributes;
 
 public static class Mapper
 {
+    public static string GetTableName<T>()
+    {
+        return GetTableName(typeof(T));
+    }
+    public static string GetTableName(Type type)
+    {
+        TableNameAttribute tableNameAtt = type.GetTypeInfo().GetCustomAttribute<TableNameAttribute>();
+        return tableNameAtt != null ? tableNameAtt.TableName : type.Name + "s";
+    }
+
     public static Dictionary<string,ColumnInfo> GetTableMapping<T>()
+    {
+        return GetTableMapping(typeof(T));
+    }
+
+    public static Dictionary<string, ColumnInfo> GetTableMapping(Type type)
     {
         //getting properties in a specific order
         Dictionary<string,ColumnInfo> TableMapping = new Dictionary<string,ColumnInfo>();
-        TypeInfo typeInfo = typeof(T).GetTypeInfo();
+        TypeInfo typeInfo = type.GetTypeInfo();
         List<PropertyInfo> properties = new List<PropertyInfo>(); 
         PropertyInfo idPropertyInfo = typeInfo.GetProperty("Id");
         if (idPropertyInfo != null) properties.Add(typeInfo.GetProperty("Id")) ; //TODO: this is because Join reader always assume Id comes first
-        properties.AddRange(typeof(T).GetTypeInfo().GetProperties().Where(p => p.Name != "Id").OrderBy(p => p.Name).ToList());
+        properties.AddRange(type.GetTypeInfo().GetProperties().Where(p => p.Name != "Id").OrderBy(p => p.Name).ToList());
         foreach (PropertyInfo p in properties)
         {
             NotMappedAttribute nm = p.GetCustomAttribute<NotMappedAttribute>();
