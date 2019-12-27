@@ -349,8 +349,19 @@ namespace Dook
                 ForeignKeyAttribute fka = member.Member.GetCustomAttribute<ForeignKeyAttribute>();
                 ManyToManyAttribute mtm = member.Member.GetCustomAttribute<ManyToManyAttribute>();
                 if (ipa == null && fka == null && mtm == null) throw new Exception($"No relationship attribute (InvertedProperty, ForeignKey or ManyToMany) declared for property {member.Member.Name}. Cannot invoke Include method for this property.");
-
-                sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
+                if (ipa != null)
+                {
+                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
+                }
+                if (fka != null)
+                {
+                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[fka.ForeignKey].ColumnName} ");
+                }
+                if (mtm != null)
+                {
+                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
+                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
+                }
                 return m;
             }
 
