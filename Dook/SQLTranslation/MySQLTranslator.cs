@@ -333,7 +333,6 @@ namespace Dook
                 sb.Append(" DESC ");
                 return m;
             }
-
             if (m.Method.Name == "Include")
             {
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
@@ -359,8 +358,10 @@ namespace Dook
                 }
                 if (mtm != null)
                 {
-                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
-                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
+                    string intermediateTableName = Mapper.GetTableName(mtm.IntermediateType);
+                    Dictionary<string, ColumnInfo> intermediateMapping = Mapper.GetTableMapping(mtm.IntermediateType);
+                    sb.Append($" LEFT JOIN {intermediateTableName} AS {Alias}{intermediateTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{intermediateTableName}.{intermediateMapping[mtm.ForeignKey].ColumnName} ");
+                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}{intermediateTableName}.{intermediateMapping[mtm.TheOtherForeignKey].ColumnName} = {Alias}{childTableName}.{childMapping["Id"].ColumnName} ");
                 }
                 return m;
             }
@@ -375,6 +376,10 @@ namespace Dook
                 return m;
             }
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
             return TranslateMethod(m, false);
             throw new NotSupportedException(string.Format("The method '{0}' is not supported", m.Method.Name));
 
