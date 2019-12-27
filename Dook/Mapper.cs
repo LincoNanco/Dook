@@ -37,7 +37,15 @@ public static class Mapper
             if (nm == null)
             {
                 ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
-                TableMapping.Add(p.Name, new ColumnInfo { ColumnName = cma != null ? cma.ColumnName : p.Name, ColumnType = p.PropertyType });
+                ForeignKeyAttribute fka = p.GetCustomAttribute<ForeignKeyAttribute>();
+                if (fka == null)
+                {
+                    TableMapping.Add(p.Name, new ColumnInfo { ColumnName = cma != null ? cma.ColumnName : p.Name, ColumnType = p.PropertyType });
+                }
+                else
+                {
+                    TableMapping.Add($"{p.Name}Id", new ColumnInfo { ColumnName = cma != null ? cma.ColumnName : $"{p.Name}Id", ColumnType = p.PropertyType });
+                }
             }
         }
         return TableMapping;

@@ -167,10 +167,22 @@ namespace Dook.Tests
         }
 
         [Fact]
-        public void IncludeQueryTest()
+        public void IncludeOneToManyTest()
         {
             EntitySet<TestModelWithChilds> queryObject = new EntitySet<TestModelWithChilds>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<TestModelWithChilds> query = queryObject.Include(t => t.ChildModels).Where(t => t.BoolProperty && t.EnumProperty == TestEnum.Three);
+            string expectedResult = "SELECT t.StringProperty FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.BoolProperty AND (t.EnumProperty = @P0))) AS t";
+            MySQLTranslator translator = new MySQLTranslator();
+            SQLPredicate Sql = translator.Translate(query.Expression);
+            Assert.Equal(expectedResult, Sql.Sql);
+        }
+
+        
+        [Fact]
+        public void IncludeManyToManyTest()
+        {
+            EntitySet<ManyToManyModel1> queryObject = new EntitySet<ManyToManyModel1>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            IQueryable<ManyToManyModel1> query = queryObject.Include(t => t.ManyToManyModel2);
             string expectedResult = "SELECT t.StringProperty FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.BoolProperty AND (t.EnumProperty = @P0))) AS t";
             MySQLTranslator translator = new MySQLTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);

@@ -336,10 +336,16 @@ namespace Dook
             if (m.Method.Name == "Include")
             {
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
-                string childTableName = Mapper.GetTableName(lambda.ReturnType.GenericTypeArguments[0]);
-                string tableName = Mapper.GetTableName(m.Arguments[0].Type.GenericTypeArguments[0]);
+                Type childType = lambda.ReturnType.GenericTypeArguments[0];
+                Type type = m.Arguments[0].Type.GenericTypeArguments[0];
+                string childTableName = Mapper.GetTableName(childType);
+                string tableName = Mapper.GetTableName(type);
                 Dictionary<string, ColumnInfo> mapping = Mapper.GetTableMapping(m.Arguments[0].Type.GenericTypeArguments[0]);
                 Dictionary<string, ColumnInfo> childMapping = Mapper.GetTableMapping(lambda.ReturnType.GenericTypeArguments[0]);
+                predicate.Aliases.Add($"{Alias}");
+                predicate.TableMappings.Add(type, mapping);
+                predicate.Aliases.Add($"{Alias}{childTableName}");
+                predicate.TableMappings.Add(childType, childMapping);
                 this.Visit(m.Arguments[0]);
                 MemberExpression member = (MemberExpression) lambda.Body;
 
@@ -359,7 +365,10 @@ namespace Dook
                 if (mtm != null)
                 {
                     string intermediateTableName = Mapper.GetTableName(mtm.IntermediateType);
+                    Type intermediateType = mtm.IntermediateType;
                     Dictionary<string, ColumnInfo> intermediateMapping = Mapper.GetTableMapping(mtm.IntermediateType);
+                    predicate.Aliases.Add($"{Alias}{intermediateTableName}");
+                    predicate.TableMappings.Add(intermediateType, intermediateMapping);
                     sb.Append($" LEFT JOIN {intermediateTableName} AS {Alias}{intermediateTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{intermediateTableName}.{intermediateMapping[mtm.ForeignKey].ColumnName} ");
                     sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}{intermediateTableName}.{intermediateMapping[mtm.TheOtherForeignKey].ColumnName} = {Alias}{childTableName}.{childMapping["Id"].ColumnName} ");
                 }
@@ -376,10 +385,6 @@ namespace Dook
                 return m;
             }
 
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
             return TranslateMethod(m, false);
             throw new NotSupportedException(string.Format("The method '{0}' is not supported", m.Method.Name));
 
