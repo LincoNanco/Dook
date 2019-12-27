@@ -7,7 +7,7 @@ namespace Dook.Tests.Models
     public class ManyToManyModel2 : IEntity
     {
         public int Id { get; set; }
-        [ManyToMany(typeof(Model1Model2), "Model2Id", "Model1Id")]
+        [ManyToMany(typeof(Model1Model2), "Model2", "Model1")]
         public List<ManyToManyModel1> ManyToManyModel1 { get; set; }
     }
 }

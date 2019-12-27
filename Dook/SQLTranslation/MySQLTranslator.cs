@@ -333,7 +333,7 @@ namespace Dook
                 sb.Append(" DESC ");
                 return m;
             }
-            if (m.Method.Name == "Include")
+            if (m.Method.Name == "Include" || m.Method.Name == "ThenInclude")
             {
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Type childType = lambda.ReturnType.GenericTypeArguments[0];
@@ -342,9 +342,9 @@ namespace Dook
                 string tableName = Mapper.GetTableName(type);
                 Dictionary<string, ColumnInfo> mapping = Mapper.GetTableMapping(m.Arguments[0].Type.GenericTypeArguments[0]);
                 Dictionary<string, ColumnInfo> childMapping = Mapper.GetTableMapping(lambda.ReturnType.GenericTypeArguments[0]);
-                predicate.Aliases.Add($"{Alias}");
+                predicate.Aliases.Add(type, $"{Alias}");
                 predicate.TableMappings.Add(type, mapping);
-                predicate.Aliases.Add($"{Alias}{childTableName}");
+                predicate.Aliases.Add(childType, $"{Alias}{childTableName}");
                 predicate.TableMappings.Add(childType, childMapping);
                 this.Visit(m.Arguments[0]);
                 MemberExpression member = (MemberExpression) lambda.Body;
@@ -367,21 +367,11 @@ namespace Dook
                     string intermediateTableName = Mapper.GetTableName(mtm.IntermediateType);
                     Type intermediateType = mtm.IntermediateType;
                     Dictionary<string, ColumnInfo> intermediateMapping = Mapper.GetTableMapping(mtm.IntermediateType);
-                    predicate.Aliases.Add($"{Alias}{intermediateTableName}");
+                    predicate.Aliases.Add(intermediateType, $"{Alias}{intermediateTableName}");
                     predicate.TableMappings.Add(intermediateType, intermediateMapping);
                     sb.Append($" LEFT JOIN {intermediateTableName} AS {Alias}{intermediateTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{intermediateTableName}.{intermediateMapping[mtm.ForeignKey].ColumnName} ");
                     sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}{intermediateTableName}.{intermediateMapping[mtm.TheOtherForeignKey].ColumnName} = {Alias}{childTableName}.{childMapping["Id"].ColumnName} ");
                 }
-                return m;
-            }
-
-            if (m.Method.Name == "ThenInclude")
-            {
-                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
-                this.Visit(m.Arguments[0]);
-                sb.Append(" LEFT JOIN ");
-                this.Visit(lambda.Body);
-                sb.Append(" AS  asdf");
                 return m;
             }
 
@@ -496,7 +486,7 @@ namespace Dook
             else if (q != null)
             {
                 // assume constant nodes w/ IMappedQueryable are table references
-                string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + v.ColumnName));
+                string fields = String.Join(", ", predicate.TableMappings.Select(kvp => String.Join(", ", kvp.Value.Values.Select(v => predicate.Aliases[kvp.Key] + "." + v.ColumnName))));
                 sb.Append($"SELECT {fields} FROM {q.TableName} AS {Alias}");
                 Type type = q.ElementType;
             }

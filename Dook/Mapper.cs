@@ -34,7 +34,8 @@ public static class Mapper
         foreach (PropertyInfo p in properties)
         {
             NotMappedAttribute nm = p.GetCustomAttribute<NotMappedAttribute>();
-            if (nm == null)
+            ManyToManyAttribute mtm = p.GetCustomAttribute<ManyToManyAttribute>();
+            if (nm == null && mtm == null)
             {
                 ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
                 ForeignKeyAttribute fka = p.GetCustomAttribute<ForeignKeyAttribute>();
@@ -44,7 +45,7 @@ public static class Mapper
                 }
                 else
                 {
-                    TableMapping.Add($"{p.Name}Id", new ColumnInfo { ColumnName = cma != null ? cma.ColumnName : $"{p.Name}Id", ColumnType = p.PropertyType });
+                    TableMapping.Add(p.Name, new ColumnInfo { ColumnName = cma != null ? cma.ColumnName : $"{p.Name}Id", ColumnType = p.PropertyType });
                 }
             }
         }

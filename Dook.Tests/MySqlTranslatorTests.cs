@@ -171,7 +171,7 @@ namespace Dook.Tests
         {
             EntitySet<TestModelWithChilds> queryObject = new EntitySet<TestModelWithChilds>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<TestModelWithChilds> query = queryObject.Include(t => t.ChildModels).Where(t => t.BoolProperty && t.EnumProperty == TestEnum.Three);
-            string expectedResult = "SELECT t.StringProperty FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.BoolProperty AND (t.EnumProperty = @P0))) AS t";
+            string expectedResult = "SELECT t.Id, t.BoolProperty, t.ChildModels, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn, tChildModels.Id, tChildModels.BoolProperty, tChildModels.TestModelId FROM TestModelWithChildss AS t LEFT JOIN ChildModels AS tChildModels ON t.Id = tChildModels.TestModelId  WHERE (t.BoolProperty AND (t.EnumProperty = @P0))";
             MySQLTranslator translator = new MySQLTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);
             Assert.Equal(expectedResult, Sql.Sql);
@@ -183,7 +183,7 @@ namespace Dook.Tests
         {
             EntitySet<ManyToManyModel1> queryObject = new EntitySet<ManyToManyModel1>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<ManyToManyModel1> query = queryObject.Include(t => t.ManyToManyModel2);
-            string expectedResult = "SELECT t.StringProperty FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.BoolProperty AND (t.EnumProperty = @P0))) AS t";
+            string expectedResult = "SELECT x.Id, xManyToManyModel2s.Id FROM ManyToManyModel1s AS x LEFT JOIN Model1Model2s AS xModel1Model2s ON x.Id = xModel1Model2s.Model1Id  LEFT JOIN ManyToManyModel2s AS xManyToManyModel2s ON xModel1Model2s.Model2Id = xManyToManyModel2s.Id ";
             MySQLTranslator translator = new MySQLTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);
             Assert.Equal(expectedResult, Sql.Sql);

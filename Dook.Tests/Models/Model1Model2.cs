@@ -7,8 +7,10 @@ namespace Dook.Tests.Models
     {
         public int Id { get; set; }
         [ForeignKey("Id")]
+        [ColumnName("Model1Id")]
         public ManyToManyModel1 Model1 { get; set; }
         [ForeignKey("Id")]
+        [ColumnName("Model2Id")]
         public ManyToManyModel2 Model2 { get; set; }
     }
 }
