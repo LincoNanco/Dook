@@ -53,6 +53,27 @@ namespace Dook
             return DbProvider.GetCommand();
         }
 
+        private void LogQuery(string queryText, Dictionary<string,object> parameters)
+        {
+            Console.WriteLine($"Executed Query: {queryText}");
+            Console.WriteLine($"Query Parameters:");
+            foreach(KeyValuePair<string,object> kvp in parameters)
+            {
+                Console.WriteLine($"{kvp.Key} : {kvp.Value.ToString()}");
+            }
+        }
+
+        private void LogQuery(string queryText, IDataParameterCollection parameters)
+        {
+            Console.WriteLine($"Executed Query: {queryText}");
+            Console.WriteLine($"Query Parameters:");
+            List<IDbDataParameter> parameterList = parameters.Cast<IDbDataParameter>().ToList();
+            foreach(IDbDataParameter parameter in parameterList)
+            {
+                Console.WriteLine($"{parameter.ParameterName} : {parameter.Value.ToString()}");
+            }
+        }
+
         public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping) where T : IEntity, new()
         {
             if (entity.Id == 0) throw new Exception("Id property must be a positive integer.");
@@ -96,6 +117,7 @@ namespace Dook
                 }
             }
             SetParameter(cmd, "@id", entity.Id);
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -153,6 +175,7 @@ namespace Dook
                     SetParameter(cmd, "@" + p, Type.GetProperty(p).GetValue(entity) ?? DBNull.Value);
                 }
             }
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -162,6 +185,7 @@ namespace Dook
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = queryText;
             SetParameter(cmd, "@id", id);
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -175,6 +199,7 @@ namespace Dook
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = query.ToString();
             predicate.SetParameters(cmd);
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -183,6 +208,7 @@ namespace Dook
             string queryText = $"DELETE FROM {TableName};";
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = queryText;
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -218,12 +244,7 @@ namespace Dook
         {
             IDbCommand cmd = DbProvider.GetCommand();
             SQLPredicate sql = Translate(expression);
-            Console.WriteLine($"Executed Query: {sql.Sql}");
-            Console.WriteLine($"Query Parameters:");
-            foreach(KeyValuePair<string,object> kvp in sql.Parameters)
-            {
-                Console.WriteLine($"{kvp.Key} : {kvp.Value.ToString()}");
-            }
+            LogQuery(sql.Sql, sql.Parameters);
             cmd.CommandText = sql.Sql;
             sql.SetParameters(cmd);
             // cmd.Connection = DbProvider.Connection; eliminating this because DbProvider already passes its connection to cmd
