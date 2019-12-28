@@ -53,7 +53,7 @@ public static class Mapper
     }
 
     /// <summary>
-    /// Gets a comma separated string with the column names. Meant to build queries.
+    /// Gets a comma separated string with the column names. Meant to build and test queries.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>

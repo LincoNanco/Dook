@@ -20,7 +20,7 @@ namespace Dook
 
         public string Sql { get; set; }
         public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
-        public Dictionary<Type, Dictionary<string,ColumnInfo>> TableMappings { get; set; } = new Dictionary<Type, Dictionary<string,ColumnInfo>>();
+        public SortedDictionary<Type, Dictionary<string,ColumnInfo>> TableMappings { get; set; } = new SortedDictionary<Type, Dictionary<string,ColumnInfo>>();
         public Dictionary<Type, string> Aliases { get; set; } = new Dictionary<Type, string>();
 
         public void SetParameters<T>(T dbCommand) where T : IDbCommand

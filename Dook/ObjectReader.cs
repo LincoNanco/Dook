@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq.Expressions;
 using System.Reflection;
 using Dook.Attributes;
 using FastMember;
@@ -78,10 +79,10 @@ namespace Dook
         Enumerator enumerator;
         Dictionary<string, ColumnInfo> TableMapping;
 
-        internal ObjectReader(IDataReader Reader)
+        internal ObjectReader(IDataReader Reader, SQLPredicate predicate)
         {
-            TableMapping = Mapper.GetTableMapping<T>();
-            enumerator = new Enumerator(Reader, TableMapping);
+            TableMapping = predicate.TableMappings[typeof(T)];
+            enumerator = new Enumerator(Reader, predicate);
         }
 
         /// <summary>
@@ -129,14 +130,26 @@ namespace Dook
         {
             IDataReader reader;
             T current;
-            Dictionary<string, ColumnInfo> tableMapping;
-            readonly TypeAccessor _accessor;
+            SQLPredicate _predicate;
+            Dictionary<Type, Dictionary<int, object>> readEntityTracker = new Dictionary<Type, Dictionary<int, object>>();
+            Dictionary<Type, TypeAccessor> typeAccessors = new Dictionary<Type, TypeAccessor>();
+            Dictionary<Type, int> startIndex = new Dictionary<Type, int>();
+            Dictionary<Type, int> endIndex = new Dictionary<Type, int>();
+            Dictionary<Type, MethodInfo> addToListAccessors = new Dictionary<Type, MethodInfo>();
 
-            public Enumerator(IDataReader oReader, Dictionary<string,ColumnInfo> TableMapping)
+            public Enumerator(IDataReader oReader, SQLPredicate predicate)
             {
                 reader = oReader;
-                tableMapping = TableMapping;
-                _accessor = TypeAccessor.Create(typeof(T));
+                _predicate = predicate;
+                typeAccessors.Add(typeof(T), TypeAccessor.Create(typeof(T)));
+                //determining start and end indexes
+                int start = 0;
+                foreach(KeyValuePair<Type,Dictionary<string, ColumnInfo>> dict in _predicate.TableMappings)
+                {
+                    startIndex.Add(dict.Key, start);
+                    endIndex.Add(dict.Key, start + dict.Value.Count);
+                    start += dict.Value.Count;
+                }
             }
 
             public T Current
@@ -159,8 +172,30 @@ namespace Dook
                 if (reader.Read())
                 {
                     T entity = new T();
-                    int i = 0;
-                    foreach (string p in tableMapping.Keys)
+                    ReadObject(entity, reader, 0, _predicate.TableMappings[typeof(T)].Count - 1);
+                    return true;
+                }
+                return false;
+            }
+
+            private void ReadObject(T entity, IDataReader reader, int start, int end)
+            {
+                //if this entity is already read, skip reading all its attributes except from ByRef ones
+                bool alreadyRead = false;
+                if (entity is IEntity)
+                {
+                    int entityId = Convert.ToInt32(reader[start]);
+                    alreadyRead = readEntityTracker[typeof(T)].ContainsKey(entityId); 
+                    if (alreadyRead) entity = (T) readEntityTracker[typeof(T)][entityId];
+                }
+                int i = start;
+                Dictionary<string, ColumnInfo> tableMapping = _predicate.TableMappings[typeof(T)];
+                TypeAccessor _accessor = typeAccessors[typeof(T)];
+                foreach (string p in tableMapping.Keys)
+                {
+                    if (i > end) break;
+                    //Checking if property is reference type. If so, reading another object to build it.
+                    if (tableMapping[p].ColumnType.IsValueType && !alreadyRead)
                     {
                         object value = reader[i];
                         if (value != DBNull.Value)
@@ -172,10 +207,108 @@ namespace Dook
                         }
                         i++;
                     }
-                    current = entity;
-                    return true;
+                    else if (tableMapping[p].ColumnType.IsByRef)
+                    {
+                        //If is a List, check if the list is instanced and add the new object to the list
+                        if (tableMapping[p].ColumnType.IsGenericType && (tableMapping[p].ColumnType.GetGenericTypeDefinition() == typeof(List<>)))
+                        {
+                            //if the list is not instanced, instance it
+                            if (_accessor[entity, p] == null)
+                            {
+                                object newList = Expression.Lambda<Func<object>>(Expression.Convert(Expression.New(tableMapping[p].ColumnType), typeof(object))).Compile()();
+                                //saving an accessor to Add method of this list, to avoid using reflection again to get it
+                                addToListAccessors.Add(tableMapping[p].ColumnType,tableMapping[p].ColumnType.GetMethod("Add"));
+                            }
+                            addToListAccessors[tableMapping[p].ColumnType].Invoke(_accessor[entity,p], new object[] { ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType], endIndex[tableMapping[p].ColumnType]) });
+                            continue;
+                        }
+                        //If is an object, read it.
+                        _accessor[entity, p] = ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType], endIndex[tableMapping[p].ColumnType]);
+                        continue;
+                    }
+                    else
+                    {
+                        throw new Exception($"Reading an object of type {tableMapping[p].ColumnType.Name} is not supported.");
+                    }
                 }
-                return false;
+                current = entity;
+            }
+
+            /// <summary>
+            /// Returns a new object read from an open reader, based on an initial and ending read index
+            /// </summary>
+            /// <param name="objectType"></param>
+            /// <param name="reader"></param>
+            /// <param name="start"></param>
+            /// <param name="end"></param>
+            /// <returns></returns>
+            /// TODO: implement this
+            private object ReadObject(Type objectType, IDataReader reader, int start, int end)
+            {
+                //if this entity is already read, skip reading all its attributes except from ByRef ones
+                bool alreadyRead = false;
+                object newObject;
+                if (objectType.IsAssignableFrom(typeof(IEntity)))
+                {
+                    int entityId = Convert.ToInt32(reader[start]);
+                    alreadyRead = readEntityTracker[objectType].ContainsKey(entityId); 
+                    if (alreadyRead)
+                    {
+                        newObject = readEntityTracker[objectType][entityId];
+                    } 
+                    else
+                    {
+                        newObject = Expression.Lambda<Func<object>>(Expression.Convert(Expression.New(objectType), typeof(object))).Compile()();
+                    }
+                }
+                else
+                {
+                    newObject = Expression.Lambda<Func<object>>(Expression.Convert(Expression.New(objectType), typeof(object))).Compile()();
+                }
+                int i = start;
+                Dictionary<string, ColumnInfo> tableMapping = _predicate.TableMappings[typeof(T)];
+                TypeAccessor _accessor = typeAccessors[typeof(T)];
+                foreach (string p in tableMapping.Keys)
+                {
+                    if (i > end) break;
+                    //Checking if property is reference type. If so, reading another object to build it.
+                    if (tableMapping[p].ColumnType.IsValueType && !alreadyRead)
+                    {
+                        object value = reader[i];
+                        if (value != DBNull.Value)
+                        {
+                            if (value != null)
+                            {
+                                _accessor[newObject, p] = ChangeType(value, tableMapping[p].ColumnType);
+                            }
+                        }
+                        i++;
+                    }
+                    else if (tableMapping[p].ColumnType.IsByRef)
+                    {
+                        //If is a List, check if the list is instanced and add the new object to the list
+                        if (tableMapping[p].ColumnType.IsGenericType && (tableMapping[p].ColumnType.GetGenericTypeDefinition() == typeof(List<>)))
+                        {
+                            //if the list is not instanced, instance it
+                            if (_accessor[newObject, p] == null)
+                            {
+                                object newList = Expression.Lambda<Func<object>>(Expression.Convert(Expression.New(tableMapping[p].ColumnType), typeof(object))).Compile()();
+                                //saving an accessor to Add method of this list, to avoid using reflection again to get it
+                                addToListAccessors.Add(tableMapping[p].ColumnType,tableMapping[p].ColumnType.GetMethod("Add"));
+                            }
+                            addToListAccessors[tableMapping[p].ColumnType].Invoke(_accessor[newObject,p], new object[] { ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType], endIndex[tableMapping[p].ColumnType]) });
+                            continue;
+                        }
+                        //If is an object, read it.
+                        _accessor[newObject, p] = ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType], endIndex[tableMapping[p].ColumnType]);
+                        continue;
+                    }
+                    else
+                    {
+                        throw new Exception($"Reading an object of type {tableMapping[p].ColumnType.Name} is not supported.");
+                    }
+                }
+                return newObject;
             }
 
             public void Reset()
