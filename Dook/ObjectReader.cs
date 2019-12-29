@@ -81,7 +81,7 @@ namespace Dook
 
         internal ObjectReader(IDataReader Reader, SQLPredicate predicate)
         {
-            TableMapping = predicate.TableMappings[typeof(T)];
+            TableMapping = predicate.TableMappings[typeof(T).Name];
             enumerator = new Enumerator(Reader, predicate);
         }
 
@@ -133,8 +133,8 @@ namespace Dook
             SQLPredicate _predicate;
             Dictionary<Type, Dictionary<int, object>> readEntityTracker = new Dictionary<Type, Dictionary<int, object>>();
             Dictionary<Type, TypeAccessor> typeAccessors = new Dictionary<Type, TypeAccessor>();
-            Dictionary<Type, int> startIndex = new Dictionary<Type, int>();
-            Dictionary<Type, int> endIndex = new Dictionary<Type, int>();
+            Dictionary<string, int> startIndex = new Dictionary<string, int>();
+            Dictionary<string, int> endIndex = new Dictionary<string, int>();
             Dictionary<Type, MethodInfo> addToListAccessors = new Dictionary<Type, MethodInfo>();
 
             public Enumerator(IDataReader oReader, SQLPredicate predicate)
@@ -144,7 +144,7 @@ namespace Dook
                 typeAccessors.Add(typeof(T), TypeAccessor.Create(typeof(T)));
                 //determining start and end indexes
                 int start = 0;
-                foreach(KeyValuePair<Type,Dictionary<string, ColumnInfo>> dict in _predicate.TableMappings)
+                foreach(KeyValuePair<string,Dictionary<string, ColumnInfo>> dict in _predicate.TableMappings)
                 {
                     startIndex.Add(dict.Key, start);
                     endIndex.Add(dict.Key, start + dict.Value.Count);
@@ -172,7 +172,7 @@ namespace Dook
                 if (reader.Read())
                 {
                     T entity = new T();
-                    ReadObject(entity, reader, 0, _predicate.TableMappings[typeof(T)].Count - 1);
+                    ReadObject(entity, reader, 0, _predicate.TableMappings[typeof(T).Name].Count - 1);
                     return true;
                 }
                 return false;
@@ -189,7 +189,7 @@ namespace Dook
                     if (alreadyRead) entity = (T) readEntityTracker[typeof(T)][entityId];
                 }
                 int i = start;
-                Dictionary<string, ColumnInfo> tableMapping = _predicate.TableMappings[typeof(T)];
+                Dictionary<string, ColumnInfo> tableMapping = _predicate.TableMappings[typeof(T).Name];
                 TypeAccessor _accessor = typeAccessors[typeof(T)];
                 foreach (string p in tableMapping.Keys)
                 {
@@ -219,11 +219,11 @@ namespace Dook
                                 //saving an accessor to Add method of this list, to avoid using reflection again to get it
                                 addToListAccessors.Add(tableMapping[p].ColumnType,tableMapping[p].ColumnType.GetMethod("Add"));
                             }
-                            addToListAccessors[tableMapping[p].ColumnType].Invoke(_accessor[entity,p], new object[] { ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType], endIndex[tableMapping[p].ColumnType]) });
+                            addToListAccessors[tableMapping[p].ColumnType].Invoke(_accessor[entity,p], new object[] { ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType.Name], endIndex[tableMapping[p].ColumnType.Name]) });
                             continue;
                         }
                         //If is an object, read it.
-                        _accessor[entity, p] = ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType], endIndex[tableMapping[p].ColumnType]);
+                        _accessor[entity, p] = ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType.Name], endIndex[tableMapping[p].ColumnType.Name]);
                         continue;
                     }
                     else
@@ -266,7 +266,7 @@ namespace Dook
                     newObject = Expression.Lambda<Func<object>>(Expression.Convert(Expression.New(objectType), typeof(object))).Compile()();
                 }
                 int i = start;
-                Dictionary<string, ColumnInfo> tableMapping = _predicate.TableMappings[typeof(T)];
+                Dictionary<string, ColumnInfo> tableMapping = _predicate.TableMappings[typeof(T).Name];
                 TypeAccessor _accessor = typeAccessors[typeof(T)];
                 foreach (string p in tableMapping.Keys)
                 {
@@ -296,11 +296,11 @@ namespace Dook
                                 //saving an accessor to Add method of this list, to avoid using reflection again to get it
                                 addToListAccessors.Add(tableMapping[p].ColumnType,tableMapping[p].ColumnType.GetMethod("Add"));
                             }
-                            addToListAccessors[tableMapping[p].ColumnType].Invoke(_accessor[newObject,p], new object[] { ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType], endIndex[tableMapping[p].ColumnType]) });
+                            addToListAccessors[tableMapping[p].ColumnType].Invoke(_accessor[newObject,p], new object[] { ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType.Name], endIndex[tableMapping[p].ColumnType.Name]) });
                             continue;
                         }
                         //If is an object, read it.
-                        _accessor[newObject, p] = ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType], endIndex[tableMapping[p].ColumnType]);
+                        _accessor[newObject, p] = ReadObject(tableMapping[p].ColumnType, reader, startIndex[tableMapping[p].ColumnType.Name], endIndex[tableMapping[p].ColumnType.Name]);
                         continue;
                     }
                     else

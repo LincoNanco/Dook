@@ -23,6 +23,8 @@ namespace Dook
         bool IgnoreAliases;
         string ProcedureCall;
         
+        SortedDictionary<string, string> JoinCriteria = new SortedDictionary<string, string>();
+        SortedDictionary<string, string> JoinType = new SortedDictionary<string, string>();
         HashSet<string> FilteredChildObject;
 
         internal MySQLTranslator()
@@ -42,6 +44,16 @@ namespace Dook
             predicate = new SQLPredicate();
             Visit(expression);
             predicate.Sql = $"{ProcedureCall}{sb.ToString()}";
+            //requiring included properties
+            if (JoinCriteria.Count > 0)
+            {
+                List<string> joinPredicates = new List<string>();
+                foreach(string type in JoinCriteria.Keys)
+                {
+                    joinPredicates.Add($"{JoinType[type]} {JoinCriteria[type]}");
+                }
+                predicate.Sql += String.Join(" ", joinPredicates);
+            }
             return predicate;
         }
 
@@ -338,46 +350,68 @@ namespace Dook
                 LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
                 Type childType = lambda.ReturnType.GenericTypeArguments[0];
                 Type type = m.Arguments[0].Type.GenericTypeArguments[0];
-                string childTableName = Mapper.GetTableName(childType);
-                string tableName = Mapper.GetTableName(type);
-                Dictionary<string, ColumnInfo> mapping = Mapper.GetTableMapping(m.Arguments[0].Type.GenericTypeArguments[0]);
-                Dictionary<string, ColumnInfo> childMapping = Mapper.GetTableMapping(lambda.ReturnType.GenericTypeArguments[0]);
-                predicate.Aliases.Add(type, $"{Alias}");
-                predicate.TableMappings.Add(type, mapping);
-                predicate.Aliases.Add(childType, $"{Alias}{childTableName}");
-                predicate.TableMappings.Add(childType, childMapping);
-                this.Visit(m.Arguments[0]);
                 MemberExpression member = (MemberExpression) lambda.Body;
-
-                //TODO: check the type of relationship between the classes by checking InvertedProperty, ManyToMany and ForeignKey attributes. If no one is declared, throw an exception
-                InvertedPropertyAttribute ipa = member.Member.GetCustomAttribute<InvertedPropertyAttribute>();
-                ForeignKeyAttribute fka = member.Member.GetCustomAttribute<ForeignKeyAttribute>();
-                ManyToManyAttribute mtm = member.Member.GetCustomAttribute<ManyToManyAttribute>();
-                if (ipa == null && fka == null && mtm == null) throw new Exception($"No relationship attribute (InvertedProperty, ForeignKey or ManyToMany) declared for property {member.Member.Name}. Cannot invoke Include method for this property.");
-                if (ipa != null)
-                {
-                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
-                }
-                if (fka != null)
-                {
-                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[fka.ForeignKey].ColumnName} ");
-                }
-                if (mtm != null)
-                {
-                    string intermediateTableName = Mapper.GetTableName(mtm.IntermediateType);
-                    Type intermediateType = mtm.IntermediateType;
-                    Dictionary<string, ColumnInfo> intermediateMapping = Mapper.GetTableMapping(mtm.IntermediateType);
-                    predicate.Aliases.Add(intermediateType, $"{Alias}{intermediateTableName}");
-                    predicate.TableMappings.Add(intermediateType, intermediateMapping);
-                    sb.Append($" LEFT JOIN {intermediateTableName} AS {Alias}{intermediateTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{intermediateTableName}.{intermediateMapping[mtm.ForeignKey].ColumnName} ");
-                    sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}{intermediateTableName}.{intermediateMapping[mtm.TheOtherForeignKey].ColumnName} = {Alias}{childTableName}.{childMapping["Id"].ColumnName} ");
-                }
+                //adding join clauses to be included when the query is ready
+                SetJoin(type, childType, member);
+                this.Visit(m.Arguments[0]);
                 return m;
             }
 
             return TranslateMethod(m, false);
             throw new NotSupportedException(string.Format("The method '{0}' is not supported", m.Method.Name));
 
+        }
+
+        /// <summary>
+        /// Sets JOIN clauses when needed
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="childType"></param>
+        /// <param name="member"></param>
+        private void SetJoin(Type type, Type childType, MemberExpression member, bool included = false, bool filter = false)
+        {
+                //skipping if child type already included
+                if (predicate.Aliases.ContainsKey(childType.Name)) return;
+                string childTableName = Mapper.GetTableName(childType);
+                string tableName = Mapper.GetTableName(type);
+                Dictionary<string, ColumnInfo> mapping = Mapper.GetTableMapping(type);
+                Dictionary<string, ColumnInfo> childMapping = Mapper.GetTableMapping(childType);
+                predicate.Aliases.Add(type.Name, $"{Alias}");
+                predicate.TableMappings.Add(type.Name, mapping);
+                predicate.Aliases.Add(childType.Name, $"{Alias}{childTableName}");
+                predicate.TableMappings.Add(childType.Name, childMapping);
+                //skipping if join is already set for child type
+                if (JoinCriteria.ContainsKey(childType.Name)) return;
+                InvertedPropertyAttribute ipa = member.Member.GetCustomAttribute<InvertedPropertyAttribute>();
+                ForeignKeyAttribute fka = member.Member.GetCustomAttribute<ForeignKeyAttribute>();
+                ManyToManyAttribute mtm = member.Member.GetCustomAttribute<ManyToManyAttribute>();
+                if (ipa == null && fka == null && mtm == null) throw new Exception($"No relationship attribute (InvertedProperty, ForeignKey or ManyToMany) declared for property {member.Member.Name}. Cannot invoke Include method for this property.");
+                if (ipa != null)
+                {
+                    JoinCriteria.Add(childType.Name, $"{childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
+                    JoinType.Add(childType.Name, filter ? $" INNER JOIN " : $" LEFT JOIN ");
+                    // sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[ipa.PropertyName].ColumnName} ");
+                }
+                if (fka != null)
+                {
+                    JoinCriteria.Add(childType.Name, $"{childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[fka.ForeignKey].ColumnName} ");
+                    JoinType.Add(childType.Name, filter ? $" INNER JOIN " : $" LEFT JOIN ");
+                    // sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{childTableName}.{childMapping[fka.ForeignKey].ColumnName} ");
+                }
+                if (mtm != null)
+                {
+                    string intermediateTableName = Mapper.GetTableName(mtm.IntermediateType);
+                    Type intermediateType = mtm.IntermediateType;
+                    Dictionary<string, ColumnInfo> intermediateMapping = Mapper.GetTableMapping(mtm.IntermediateType);
+                    // predicate.Aliases.Add(intermediateType.Name, $"{Alias}{intermediateTableName}");
+                    // predicate.TableMappings.Add(intermediateType.Name, intermediateMapping);
+                    JoinCriteria.Add(intermediateType.Name, $"{intermediateTableName} AS {Alias}{intermediateTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{intermediateTableName}.{intermediateMapping[mtm.ForeignKey].ColumnName} ");
+                    JoinType.Add(intermediateType.Name, filter ? $" INNER JOIN " : $" LEFT JOIN ");
+                    JoinCriteria.Add(childType.Name, $"{childTableName} AS {Alias}{childTableName} ON {Alias}{intermediateTableName}.{intermediateMapping[mtm.TheOtherForeignKey].ColumnName} = {Alias}{childTableName}.{childMapping["Id"].ColumnName} ");
+                    JoinType.Add(childType.Name, filter ? $" INNER JOIN " : $" LEFT JOIN ");
+                    // sb.Append($" LEFT JOIN {intermediateTableName} AS {Alias}{intermediateTableName} ON {Alias}.{mapping["Id"].ColumnName} = {Alias}{intermediateTableName}.{intermediateMapping[mtm.ForeignKey].ColumnName} ");
+                    // sb.Append($" LEFT JOIN {childTableName} AS {Alias}{childTableName} ON {Alias}{intermediateTableName}.{intermediateMapping[mtm.TheOtherForeignKey].ColumnName} = {Alias}{childTableName}.{childMapping["Id"].ColumnName} ");
+                }
         }
 
         /// <summary>
@@ -486,7 +520,8 @@ namespace Dook
             else if (q != null)
             {
                 // assume constant nodes w/ IMappedQueryable are table references
-                string fields = String.Join(", ", predicate.TableMappings.Select(kvp => String.Join(", ", kvp.Value.Values.Select(v => predicate.Aliases[kvp.Key] + "." + v.ColumnName))));
+                string fields = String.Join(", ", q.TableMapping.Values.Select(v => Alias + "." + v.ColumnName));
+                if (predicate.TableMappings.Any()) fields += ", " + String.Join(", ", predicate.TableMappings.Select(kvp => String.Join(", ", kvp.Value.Values.Select(v => predicate.Aliases[kvp.Key] + "." + v.ColumnName))));
                 sb.Append($"SELECT {fields} FROM {q.TableName} AS {Alias}");
                 Type type = q.ElementType;
             }

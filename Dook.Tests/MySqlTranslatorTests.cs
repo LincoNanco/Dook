@@ -166,24 +166,50 @@ namespace Dook.Tests
             Assert.Equal(expectedResult, Sql.Sql);
         }
 
-        [Fact]
-        public void IncludeOneToManyTest()
-        {
+        /// <summary>
+        /// Testing query translation
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object[]> OneToManyQueryData()
+        {   
             EntitySet<TestModelWithChilds> queryObject = new EntitySet<TestModelWithChilds>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<TestModelWithChilds> query = queryObject.Include(t => t.ChildModels).Where(t => t.BoolProperty && t.EnumProperty == TestEnum.Three);
-            string expectedResult = "SELECT t.Id, t.BoolProperty, t.ChildModels, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn, tChildModels.Id, tChildModels.BoolProperty, tChildModels.TestModelId FROM TestModelWithChildss AS t LEFT JOIN ChildModels AS tChildModels ON t.Id = tChildModels.TestModelId  WHERE (t.BoolProperty AND (t.EnumProperty = @P0))";
+            yield return new object[]
+            {
+                query,
+                "SELECT t.Id, t.BoolProperty, t.ChildModels, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn, tChildModels.Id, tChildModels.BoolProperty, tChildModels.TestModelId FROM TestModelWithChildss AS t LEFT JOIN ChildModels AS tChildModels ON t.Id = tChildModels.TestModelId  WHERE (t.BoolProperty AND (t.EnumProperty = @P0))"
+            };       
+        }
+        [Theory, MemberData("OneToManyQueryData")]
+        public void IncludeOneToManyTest(IQueryable<TestModelWithChilds> query, string expectedResult)
+        {
             MySQLTranslator translator = new MySQLTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);
             Assert.Equal(expectedResult, Sql.Sql);
         }
 
-        
-        [Fact]
-        public void IncludeManyToManyTest()
-        {
+        /// <summary>
+        /// Testing query translation
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object[]> ManyToManyQueryData()
+        {   
             EntitySet<ManyToManyModel1> queryObject = new EntitySet<ManyToManyModel1>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<ManyToManyModel1> query = queryObject.Include(t => t.ManyToManyModel2);
-            string expectedResult = "SELECT x.Id, xManyToManyModel2s.Id FROM ManyToManyModel1s AS x LEFT JOIN Model1Model2s AS xModel1Model2s ON x.Id = xModel1Model2s.Model1Id  LEFT JOIN ManyToManyModel2s AS xManyToManyModel2s ON xModel1Model2s.Model2Id = xManyToManyModel2s.Id ";
+            yield return new object[]
+            {
+                query.Where(t => t.ManyToManyModel2.Where(m => m.Id > 3).Count() > 1),
+                "SELECT x.Id, xManyToManyModel2s.Id FROM ManyToManyModel1s AS x LEFT JOIN  ManyToManyModel2s AS xManyToManyModel2s ON xModel1Model2s.Model2Id = xManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS xModel1Model2s ON x.Id = xModel1Model2s.Model1Id "
+            };  
+            yield return new object[]
+            {
+                query,
+                "SELECT x.Id, xManyToManyModel2s.Id FROM ManyToManyModel1s AS x LEFT JOIN  ManyToManyModel2s AS xManyToManyModel2s ON xModel1Model2s.Model2Id = xManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS xModel1Model2s ON x.Id = xModel1Model2s.Model1Id "
+            };       
+        }
+        [Theory, MemberData("ManyToManyQueryData")]
+        public void IncludeManyToManyTest(IQueryable<ManyToManyModel1> query, string expectedResult)
+        {
             MySQLTranslator translator = new MySQLTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);
             Assert.Equal(expectedResult, Sql.Sql);
