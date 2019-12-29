@@ -15,7 +15,7 @@ namespace Dook.Tests
         /// <returns></returns>
         public static IEnumerable<object[]> QueryTestsData()
         {   
-            Query<TestModel> queryObject = new Query<TestModel>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            Query<TestModel> queryObject = new Query<TestModel>(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<TestModel> query = queryObject.Where(t => t.BoolProperty && t.EnumProperty == TestEnum.Three);
             yield return new object[]
             {
@@ -76,7 +76,7 @@ namespace Dook.Tests
         /// <returns></returns>
         public static IEnumerable<object[]> FunctionTestsData()
         {          
-            TestFunction testFunction = new TestFunction(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            TestFunction testFunction = new TestFunction(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             testFunction.Parameter0 = "Val0";
             testFunction.Parameter1 = "Val1";
             IQueryable<TestFunctionModel> query1 = testFunction;
@@ -105,7 +105,7 @@ namespace Dook.Tests
         [Fact]
         public void SelectReturningNewObjectTest()
         {
-            Query<TestModel> queryObject = new Query<TestModel>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            Query<TestModel> queryObject = new Query<TestModel>(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<TestResult> query = queryObject.Where(t => t.BoolProperty && t.EnumProperty == TestEnum.Three).Select(t => new TestResult { BoolProperty = t.BoolProperty, StringProperty = t.StringProperty } );
             string expectedResult = "SELECT t.BoolProperty, t.StringProperty FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.BoolProperty AND (t.EnumProperty = @P0))) AS t";
             MySQLTranslator translator = new MySQLTranslator();
@@ -116,7 +116,7 @@ namespace Dook.Tests
         [Fact]
         public void SelectReturningBoolTest()
         {
-            Query<TestModel> queryObject = new Query<TestModel>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            Query<TestModel> queryObject = new Query<TestModel>(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<bool> query = queryObject.Where(t => t.BoolProperty && t.EnumProperty == TestEnum.Three).Select(t => t.BoolProperty);
             string expectedResult = "SELECT t.BoolProperty FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.BoolProperty AND (t.EnumProperty = @P0))) AS t";
             MySQLTranslator translator = new MySQLTranslator();
@@ -127,7 +127,7 @@ namespace Dook.Tests
         [Fact]
         public void SelectReturningStringTest()
         {
-            Query<TestModel> queryObject = new Query<TestModel>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            Query<TestModel> queryObject = new Query<TestModel>(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<string> query = queryObject.Where(t => t.BoolProperty && t.EnumProperty == TestEnum.Three).Select(t => t.StringProperty);
             string expectedResult = "SELECT t.StringProperty FROM (SELECT t.Id, t.BoolProperty, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn FROM TestModels AS t WHERE (t.BoolProperty AND (t.EnumProperty = @P0))) AS t";
             MySQLTranslator translator = new MySQLTranslator();
@@ -141,7 +141,7 @@ namespace Dook.Tests
         /// <returns></returns>
         public static IEnumerable<object[]> StringQueryTestsData()
         {   
-            QueryString<TestQuery> queryObject = new QueryString<TestQuery>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            QueryString<TestQuery> queryObject = new QueryString<TestQuery>(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             queryObject.SQLPredicate.Parameters.Add("@F0", 1);
             queryObject.SQLPredicate.Parameters.Add("@F1", "Test");
             IQueryable<TestQuery> query = queryObject;
@@ -172,19 +172,25 @@ namespace Dook.Tests
         /// <returns></returns>
         public static IEnumerable<object[]> OneToManyQueryData()
         {   
-            EntitySet<TestModelWithChilds> queryObject = new EntitySet<TestModelWithChilds>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            EntitySet<TestModelWithChilds> queryObject = new EntitySet<TestModelWithChilds>(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<TestModelWithChilds> query = queryObject.Include(t => t.ChildModels).Where(t => t.BoolProperty && t.EnumProperty == TestEnum.Three);
+            // yield return new object[]
+            // {
+            //     query,
+            //     "SELECT t.Id, t.BoolProperty, t.ChildModels, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn, tChildModels.Id, tChildModels.BoolProperty, tChildModels.TestModelId FROM TestModelWithChildss AS t LEFT JOIN ChildModels AS tChildModels ON t.Id = tChildModels.TestModelId  WHERE (t.BoolProperty AND (t.EnumProperty = @P0))"
+            // };  
             yield return new object[]
             {
-                query,
+                query.Where(t => t.ChildModels.Where(c => c.Id > 3).Count() > 1),
                 "SELECT t.Id, t.BoolProperty, t.ChildModels, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn, tChildModels.Id, tChildModels.BoolProperty, tChildModels.TestModelId FROM TestModelWithChildss AS t LEFT JOIN ChildModels AS tChildModels ON t.Id = tChildModels.TestModelId  WHERE (t.BoolProperty AND (t.EnumProperty = @P0))"
-            };       
+            };        
         }
         [Theory, MemberData("OneToManyQueryData")]
         public void IncludeOneToManyTest(IQueryable<TestModelWithChilds> query, string expectedResult)
         {
             MySQLTranslator translator = new MySQLTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);
+            Console.WriteLine(Sql.Sql);
             Assert.Equal(expectedResult, Sql.Sql);
         }
 
@@ -194,24 +200,25 @@ namespace Dook.Tests
         /// <returns></returns>
         public static IEnumerable<object[]> ManyToManyQueryData()
         {   
-            EntitySet<ManyToManyModel1> queryObject = new EntitySet<ManyToManyModel1>(new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
+            EntitySet<ManyToManyModel1> queryObject = new EntitySet<ManyToManyModel1>(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<ManyToManyModel1> query = queryObject.Include(t => t.ManyToManyModel2);
-            yield return new object[]
-            {
-                query.Where(t => t.ManyToManyModel2.Where(m => m.Id > 3).Count() > 1),
-                "SELECT x.Id, xManyToManyModel2s.Id FROM ManyToManyModel1s AS x LEFT JOIN  ManyToManyModel2s AS xManyToManyModel2s ON xModel1Model2s.Model2Id = xManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS xModel1Model2s ON x.Id = xModel1Model2s.Model1Id "
-            };  
             yield return new object[]
             {
                 query,
                 "SELECT x.Id, xManyToManyModel2s.Id FROM ManyToManyModel1s AS x LEFT JOIN  ManyToManyModel2s AS xManyToManyModel2s ON xModel1Model2s.Model2Id = xManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS xModel1Model2s ON x.Id = xModel1Model2s.Model1Id "
             };       
+            yield return new object[]
+            {
+                query.Where(t => t.ManyToManyModel2.Where(m => m.Id > 3).Count() > 1),
+                "SELECT t.Id, tManyToManyModel2s.Id FROM ManyToManyModel1s AS t WHERE (SELECT COUNT(*) FROM (SELECT * FROM ManyToManyModel2s AS m  INNER JOIN Model1Model2s AS mModel1Model2s ON t.Id = mModel1Model2s.Model1Id  INNER JOIN ManyToManyModel2s AS mManyToManyModel2s ON mModel1Model2s.Model2Id = mManyToManyModel2s.Id  AND (m.Id > @P0)) AS m > @P1) LEFT JOIN  ManyToManyModel2s AS tManyToManyModel2s ON tModel1Model2s.Model2Id = tManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS tModel1Model2s ON t.Id = tModel1Model2s.Model1Id "
+            };  
         }
         [Theory, MemberData("ManyToManyQueryData")]
         public void IncludeManyToManyTest(IQueryable<ManyToManyModel1> query, string expectedResult)
         {
             MySQLTranslator translator = new MySQLTranslator();
             SQLPredicate Sql = translator.Translate(query.Expression);
+            Console.WriteLine(Sql.Sql);
             Assert.Equal(expectedResult, Sql.Sql);
         }
     }
