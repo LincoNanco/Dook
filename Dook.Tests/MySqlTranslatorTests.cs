@@ -183,7 +183,12 @@ namespace Dook.Tests
             {
                 query.Where(t => t.ChildModels.Where(c => c.Id > 3).Count() > 1),
                 "SELECT t.Id, t.BoolProperty, t.ChildModels, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn, tChildModels.Id, tChildModels.BoolProperty, tChildModels.TestModelId FROM TestModelWithChildss AS t LEFT JOIN ChildModels AS tChildModels ON t.Id = tChildModels.TestModelId  WHERE (t.BoolProperty AND (t.EnumProperty = @P0))"
-            };        
+            };  
+            yield return new object[]
+            {
+                query.Where(t => t.ChildModels.Where(c => c.Id > 3).Count() > 1),
+                "SELECT t.Id, t.BoolProperty, t.ChildModels, t.CreatedOn, t.DateTimeProperty, t.EnumProperty, t.StringProperty, t.UpdatedOn, tChildModels.Id, tChildModels.BoolProperty, tChildModels.TestModelId FROM TestModelWithChildss AS t LEFT JOIN ChildModels AS tChildModels ON t.Id = tChildModels.TestModelId  WHERE (t.BoolProperty AND (t.EnumProperty = @P0))"
+            };            
         }
         [Theory, MemberData("OneToManyQueryData")]
         public void IncludeOneToManyTest(IQueryable<TestModelWithChilds> query, string expectedResult)
@@ -202,16 +207,26 @@ namespace Dook.Tests
         {   
             EntitySet<ManyToManyModel1> queryObject = new EntitySet<ManyToManyModel1>(new QueryProvider(new DbProvider(DbType.MySql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;")));
             IQueryable<ManyToManyModel1> query = queryObject.Include(t => t.ManyToManyModel2);
+            // yield return new object[]
+            // {
+            //     query,
+            //     "SELECT x.Id, xManyToManyModel2s.Id FROM ManyToManyModel1s AS x LEFT JOIN  ManyToManyModel2s AS xManyToManyModel2s ON xModel1Model2s.Model2Id = xManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS xModel1Model2s ON x.Id = xModel1Model2s.Model1Id "
+            // };       
+            // yield return new object[]
+            // {
+            //     query.Where(t => t.ManyToManyModel2.Where(m => m.Id > 3).Count() > 1),
+            //     "SELECT t.Id, tManyToManyModel2s.Id FROM ManyToManyModel1s AS t WHERE (SELECT COUNT(*) FROM (SELECT * FROM ManyToManyModel2s AS m  INNER JOIN Model1Model2s AS mModel1Model2s ON t.Id = mModel1Model2s.Model1Id  INNER JOIN ManyToManyModel2s AS mManyToManyModel2s ON mModel1Model2s.Model2Id = mManyToManyModel2s.Id  AND (m.Id > @P0)) AS m > @P1) LEFT JOIN  ManyToManyModel2s AS tManyToManyModel2s ON tModel1Model2s.Model2Id = tManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS tModel1Model2s ON t.Id = tModel1Model2s.Model1Id "
+            // }; 
+            // yield return new object[]
+            // {
+            //     query.Where(t => t.ManyToManyModel2.Where(m => m.ChildModel.BoolProperty).Count() > 1),
+            //     "SELECT t.Id, tManyToManyModel2s.Id FROM ManyToManyModel1s AS t WHERE (SELECT COUNT(*) FROM (SELECT * FROM ManyToManyModel2s AS m  INNER JOIN Model1Model2s AS mModel1Model2s ON t.Id = mModel1Model2s.Model1Id  INNER JOIN ManyToManyModel2s AS mManyToManyModel2s ON mModel1Model2s.Model2Id = mManyToManyModel2s.Id  AND (m.Id > @P0)) AS m > @P1) LEFT JOIN  ManyToManyModel2s AS tManyToManyModel2s ON tModel1Model2s.Model2Id = tManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS tModel1Model2s ON t.Id = tModel1Model2s.Model1Id "
+            // };   
             yield return new object[]
             {
-                query,
-                "SELECT x.Id, xManyToManyModel2s.Id FROM ManyToManyModel1s AS x LEFT JOIN  ManyToManyModel2s AS xManyToManyModel2s ON xModel1Model2s.Model2Id = xManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS xModel1Model2s ON x.Id = xModel1Model2s.Model1Id "
-            };       
-            yield return new object[]
-            {
-                query.Where(t => t.ManyToManyModel2.Where(m => m.Id > 3).Count() > 1),
+                query.Where(t => t.ManyToManyModel2.Where(m => m.ChildModel.Id > 3).Count() > 1),
                 "SELECT t.Id, tManyToManyModel2s.Id FROM ManyToManyModel1s AS t WHERE (SELECT COUNT(*) FROM (SELECT * FROM ManyToManyModel2s AS m  INNER JOIN Model1Model2s AS mModel1Model2s ON t.Id = mModel1Model2s.Model1Id  INNER JOIN ManyToManyModel2s AS mManyToManyModel2s ON mModel1Model2s.Model2Id = mManyToManyModel2s.Id  AND (m.Id > @P0)) AS m > @P1) LEFT JOIN  ManyToManyModel2s AS tManyToManyModel2s ON tModel1Model2s.Model2Id = tManyToManyModel2s.Id   LEFT JOIN  Model1Model2s AS tModel1Model2s ON t.Id = tModel1Model2s.Model1Id "
-            };  
+            };   
         }
         [Theory, MemberData("ManyToManyQueryData")]
         public void IncludeManyToManyTest(IQueryable<ManyToManyModel1> query, string expectedResult)

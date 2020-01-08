@@ -9,5 +9,7 @@ namespace Dook.Tests.Models
         public int Id { get; set; }
         [ManyToMany(typeof(Model1Model2), "Model2", "Model1")]
         public List<ManyToManyModel1> ManyToManyModel1 { get; set; }
+
+        public ChildModel ChildModel { get; set; }
     }
 }

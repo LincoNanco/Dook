@@ -580,7 +580,8 @@ namespace Dook
 
         protected override Expression VisitMemberAccess(MemberExpression m)
         {
-            if (m.Expression != null && m.Expression.NodeType == ExpressionType.Parameter)
+            
+            if (m.Expression != null && (m.Expression.NodeType == ExpressionType.Parameter || m.Expression.Type.IsAssignableFrom(typeof(IEntity))))
             {
                 object entity = Expression.Lambda<Func<object>>(Expression.Convert(Expression.New(m.Expression.Type), typeof(object))).Compile()();
                 var property = (PropertyInfo)m.Member;
@@ -596,7 +597,7 @@ namespace Dook
                 }
                 return m;
             }
-            if (m.Expression != null && (m.Expression.NodeType == ExpressionType.Constant || m.Expression.NodeType == ExpressionType.MemberAccess))
+            else if (m.Expression != null && (m.Expression.NodeType == ExpressionType.Constant || m.Expression.NodeType == ExpressionType.MemberAccess))
             {
                 var f = Expression.Lambda(m).Compile();
                 var value = f.DynamicInvoke();
