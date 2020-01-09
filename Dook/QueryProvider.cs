@@ -59,7 +59,7 @@ namespace Dook
             Console.WriteLine($"Query Parameters:");
             foreach(KeyValuePair<string,object> kvp in parameters)
             {
-                Console.WriteLine($"{kvp.Key} : {kvp.Value.ToString()}");
+                // Console.WriteLine($"{kvp.Key} : {kvp.Value.ToString()}");
             }
         }
 
@@ -70,7 +70,7 @@ namespace Dook
             List<IDbDataParameter> parameterList = parameters.Cast<IDbDataParameter>().ToList();
             foreach(IDbDataParameter parameter in parameterList)
             {
-                Console.WriteLine($"{parameter.ParameterName} : {parameter.Value.ToString()}");
+                // Console.WriteLine($"{parameter.ParameterName} : {parameter.Value.ToString()}");
             }
         }
 
