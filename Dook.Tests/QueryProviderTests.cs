@@ -175,7 +175,7 @@ namespace Dook.Tests
                     StringProperty = "test",
                     EnumProperty = TestEnum.One
                 },
-                $"UPDATE TestModels SET {String.Join(", ", new List<string>{ "BoolProperty = @BoolProperty", "StringProperty = @StringProperty", "DateTimeProperty = @DateTimeProperty" })} WHERE Id = @id;"
+                $"UPDATE TestModels SET {String.Join(", ", new List<string>{ "BoolProperty = @BoolProperty", "StringProperty = @StringProperty", "DateTimeProperty = @DateTimeProperty", "UpdatedOn = @UpdatedOn" })} WHERE Id = @id;"
             };
             yield return new object[]
             {

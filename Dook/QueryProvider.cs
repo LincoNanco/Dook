@@ -98,7 +98,7 @@ namespace Dook
             if (entity is ITrackDateOfChange)
             {
                 ((ITrackDateOfChange)entity).UpdatedOn = DateTime.Now;
-                if (!updatedProps.Contains("UpdatedOn"))
+                if (updatedProperties.Count() > 0 && !updatedProps.Contains("UpdatedOn"))
                 {
                     updatedProps.Add("UpdatedOn");
                 }
