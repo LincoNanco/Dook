@@ -98,6 +98,10 @@ namespace Dook
             if (entity is ITrackDateOfChange)
             {
                 ((ITrackDateOfChange)entity).UpdatedOn = DateTime.Now;
+                if (!updatedProps.Contains("UpdatedOn"))
+                {
+                    updatedProps.Add("UpdatedOn");
+                }
             }
             query.Append("UPDATE ");
             query.Append(TableName);
