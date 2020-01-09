@@ -74,8 +74,25 @@ namespace Dook
             }
         }
 
-        public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping) where T : IEntity, new()
+        public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping, params Expression<Func<T,dynamic>>[] updatedProperties) where T : IEntity, new()
         {
+            List<string> updatedProps = new List<string>();
+            foreach(Expression<Func<T,dynamic>> e in updatedProperties)
+            {
+                if (e.Body is UnaryExpression)
+                {
+                    updatedProps.Add(((MemberExpression)((UnaryExpression)e.Body).Operand).Member.Name);
+                }
+                else if (e.Body is MemberExpression)
+                {
+                    updatedProps.Add(((MemberExpression)e.Body).Member.Name);
+                }
+                else
+                {
+                    throw new Exception($"Unsupported property for update.");
+                }
+            }
+
             if (entity.Id == 0) throw new Exception("Id property must be a positive integer.");
             StringBuilder query = new StringBuilder();
             if (entity is ITrackDateOfChange)
@@ -88,7 +105,8 @@ namespace Dook
             //Building update string                   
             bool starting = true;
             string us = string.Empty;
-            foreach (string p in TableMapping.Keys)
+            if (updatedProps.Count == 0) updatedProps = TableMapping.Keys.ToList();
+            foreach (string p in updatedProps)
             {
                 if (p != "Id" && p != "CreatedOn")
                 {
