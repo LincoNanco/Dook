@@ -152,6 +152,65 @@ namespace Dook.Tests
         }
 
         /// <summary>
+        /// GetUpdateCommand Tests
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object[]> GetUpdateCommandWithSpecificPropertiesTestsData()
+        {
+            List<string> properties = new List<string>();
+            Dictionary<string, ColumnInfo> TableMapping = Mapper.GetTableMapping<TestModel>();
+            foreach (string attributeName in TableMapping.Keys)
+            {
+                if (attributeName == "Id" || attributeName == "CreatedOn") continue;
+                properties.Add($"{TableMapping[attributeName].ColumnName} = @{attributeName}");
+            }
+            yield return new object[]
+            {
+                new TestModel{
+                    CreatedOn = new DateTime(2019,05,07),
+                    UpdatedOn = new DateTime(2019,05,07),
+                    Id = 1,
+                    BoolProperty = true,
+                    DateTimeProperty = new DateTime(2019,05,07),
+                    StringProperty = "test",
+                    EnumProperty = TestEnum.One
+                },
+                $"UPDATE TestModels SET {String.Join(", ", new List<string>{ "BoolProperty = @BoolProperty", "StringProperty = @StringProperty", "DateTimeProperty = @DateTimeProperty", "UpdatedOn = @UpdatedOn" })} WHERE Id = @id;"
+            };
+            yield return new object[]
+            {
+                new TestModel{
+                    CreatedOn = new DateTime(2019,05,07),
+                    UpdatedOn = new DateTime(2019,05,07),
+                    Id = 0,
+                    BoolProperty = true,
+                    DateTimeProperty = new DateTime(2019,05,07),
+                    StringProperty = "test",
+                    EnumProperty = TestEnum.One
+                },
+                "Id property must be a positive integer."
+            };
+        }
+
+        [Theory, MemberData("GetUpdateCommandWithSpecificPropertiesTestsData")]
+        public void GetUpdateCommandWithSpecificPropertiesTests(TestModel model, string expectedResult)
+        {
+            MySQLTranslator translator = new MySQLTranslator();
+            QueryProvider provider = new QueryProvider(new DbProvider(DbType.Sql, "Server=127.0.0.1;Database=fakedb;User Id=FakeUser;Password=fake.password;"));
+            string result;
+            try
+            {
+                IDbCommand cmd = provider.GetUpdateCommand(model, "TestModels", Mapper.GetTableMapping<TestModel>(), x => x.BoolProperty, x => x.StringProperty, x => x.DateTimeProperty);
+                result = cmd.CommandText;
+            }
+            catch (Exception e)
+            {
+                result = e.Message;
+            }
+            Assert.Equal(expectedResult, result);
+        }
+
+        /// <summary>
         /// GetInsertCommand Tests
         /// </summary>
         /// <returns></returns>

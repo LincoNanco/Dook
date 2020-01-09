@@ -53,13 +53,55 @@ namespace Dook
             return DbProvider.GetCommand();
         }
 
-        public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping) where T : IEntity, new()
+        private void LogQuery(string queryText, Dictionary<string,object> parameters)
         {
+            Console.WriteLine($"Executed Query: {queryText}");
+            Console.WriteLine($"Query Parameters:");
+            foreach(KeyValuePair<string,object> kvp in parameters)
+            {
+                Console.WriteLine($"{kvp.Key} : {kvp.Value.ToString()}");
+            }
+        }
+
+        private void LogQuery(string queryText, IDataParameterCollection parameters)
+        {
+            Console.WriteLine($"Executed Query: {queryText}");
+            Console.WriteLine($"Query Parameters:");
+            List<IDbDataParameter> parameterList = parameters.Cast<IDbDataParameter>().ToList();
+            foreach(IDbDataParameter parameter in parameterList)
+            {
+                Console.WriteLine($"{parameter.ParameterName} : {parameter.Value.ToString()}");
+            }
+        }
+
+        public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping, params Expression<Func<T,dynamic>>[] updatedProperties) where T : IEntity, new()
+        {
+            List<string> updatedProps = new List<string>();
+            foreach(Expression<Func<T,dynamic>> e in updatedProperties)
+            {
+                if (e.Body is UnaryExpression)
+                {
+                    updatedProps.Add(((MemberExpression)((UnaryExpression)e.Body).Operand).Member.Name);
+                }
+                else if (e.Body is MemberExpression)
+                {
+                    updatedProps.Add(((MemberExpression)e.Body).Member.Name);
+                }
+                else
+                {
+                    throw new Exception($"Unsupported property for update.");
+                }
+            }
+
             if (entity.Id == 0) throw new Exception("Id property must be a positive integer.");
             StringBuilder query = new StringBuilder();
             if (entity is ITrackDateOfChange)
             {
                 ((ITrackDateOfChange)entity).UpdatedOn = DateTime.Now;
+                if (updatedProperties.Count() > 0 && !updatedProps.Contains("UpdatedOn"))
+                {
+                    updatedProps.Add("UpdatedOn");
+                }
             }
             query.Append("UPDATE ");
             query.Append(TableName);
@@ -67,7 +109,8 @@ namespace Dook
             //Building update string                   
             bool starting = true;
             string us = string.Empty;
-            foreach (string p in TableMapping.Keys)
+            if (updatedProps.Count == 0) updatedProps = TableMapping.Keys.ToList();
+            foreach (string p in updatedProps)
             {
                 if (p != "Id" && p != "CreatedOn")
                 {
@@ -96,6 +139,7 @@ namespace Dook
                 }
             }
             SetParameter(cmd, "@id", entity.Id);
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -153,6 +197,7 @@ namespace Dook
                     SetParameter(cmd, "@" + p, Type.GetProperty(p).GetValue(entity) ?? DBNull.Value);
                 }
             }
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -162,6 +207,7 @@ namespace Dook
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = queryText;
             SetParameter(cmd, "@id", id);
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -175,6 +221,7 @@ namespace Dook
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = query.ToString();
             predicate.SetParameters(cmd);
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -183,6 +230,7 @@ namespace Dook
             string queryText = $"DELETE FROM {TableName};";
             IDbCommand cmd = DbProvider.GetCommand();
             cmd.CommandText = queryText;
+            LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
@@ -218,12 +266,7 @@ namespace Dook
         {
             IDbCommand cmd = DbProvider.GetCommand();
             SQLPredicate sql = Translate(expression);
-            Console.WriteLine($"Executed Query: {sql.Sql}");
-            Console.WriteLine($"Query Parameters:");
-            foreach(KeyValuePair<string,object> kvp in sql.Parameters)
-            {
-                Console.WriteLine($"{kvp.Key} : {kvp.Value.ToString()}");
-            }
+            LogQuery(sql.Sql, sql.Parameters);
             cmd.CommandText = sql.Sql;
             sql.SetParameters(cmd);
             // cmd.Connection = DbProvider.Connection; eliminating this because DbProvider already passes its connection to cmd

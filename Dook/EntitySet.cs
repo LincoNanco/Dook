@@ -66,10 +66,10 @@ namespace Dook
         /// </summary>
         /// <returns>Nothing.</returns>
         /// <param name="entity">The updated Entity.</param>
-        public void Update(T entity)
+        public void Update(T entity, params Expression<Func<T,dynamic>>[] updatedProperties)
         {
             JoinResults[entity.Id] = entity;
-            IDbCommand cmd = QueryProvider.GetUpdateCommand(entity, TableName, TableMapping);
+            IDbCommand cmd = QueryProvider.GetUpdateCommand(entity, TableName, TableMapping, updatedProperties);
             cmd.ExecuteNonQuery();
         }
 
