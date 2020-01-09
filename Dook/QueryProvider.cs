@@ -55,8 +55,8 @@ namespace Dook
 
         private void LogQuery(string queryText, Dictionary<string,object> parameters)
         {
-            Console.WriteLine($"Executed Query: {queryText}");
-            Console.WriteLine($"Query Parameters:");
+            // Console.WriteLine($"Executed Query: {queryText}");
+            // Console.WriteLine($"Query Parameters:");
             foreach(KeyValuePair<string,object> kvp in parameters)
             {
                 // Console.WriteLine($"{kvp.Key} : {kvp.Value.ToString()}");
@@ -65,8 +65,8 @@ namespace Dook
 
         private void LogQuery(string queryText, IDataParameterCollection parameters)
         {
-            Console.WriteLine($"Executed Query: {queryText}");
-            Console.WriteLine($"Query Parameters:");
+            // Console.WriteLine($"Executed Query: {queryText}");
+            // Console.WriteLine($"Query Parameters:");
             List<IDbDataParameter> parameterList = parameters.Cast<IDbDataParameter>().ToList();
             foreach(IDbDataParameter parameter in parameterList)
             {
