@@ -14,7 +14,7 @@ namespace Dook.Tests.Models
         public string StringProperty { get; set; }
         public TestEnum EnumProperty { get; set; }
 
-        [InvertedProperty("TestModelProp")]
+        [InvertedProperty("TestModelWithChildsId")]
         public List<ChildModel> ChildModels { get; set; }
         
         [NotMapped]

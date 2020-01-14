@@ -6,8 +6,10 @@ namespace Dook.Tests.Models
     public class ChildModel : IEntity
     {
         public int Id { get; set; }
+        
         [ForeignKey("Id")]
         [ColumnName("TestModelId")]
+        public int TestModelWithChildsId { get; set; }
         public TestModelWithChilds TestModelProp { get; set; }
         public bool BoolProperty { get; set; }
 
