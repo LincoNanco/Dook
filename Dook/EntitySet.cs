@@ -58,7 +58,19 @@ namespace Dook
         public void Update(T entity, params Expression<Func<T,dynamic>>[] updatedProperties)
         {
             JoinResults[entity.Id] = entity;
-            IDbCommand cmd = QueryProvider.GetUpdateCommand(entity, TableName, TableMapping, updatedProperties);
+            IDbCommand cmd = QueryProvider.GetUpdateCommand(entity, TableName, TableMapping, true, updatedProperties);
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Updates the specified entity.
+        /// </summary>
+        /// <returns>Nothing.</returns>
+        /// <param name="entity">The updated Entity.</param>
+        public void UpdateOutsideTransaction(T entity, params Expression<Func<T,dynamic>>[] updatedProperties)
+        {
+            JoinResults[entity.Id] = entity;
+            IDbCommand cmd = QueryProvider.GetUpdateCommand(entity, TableName, TableMapping, false, updatedProperties);
             cmd.ExecuteNonQuery();
         }
 
@@ -70,6 +82,17 @@ namespace Dook
         public void Insert(T entity)
         {
             IDbCommand cmd = QueryProvider.GetInsertCommand(entity, TableName, TableMapping);
+            entity.Id = Convert.ToInt32(cmd.ExecuteScalar());
+        }
+
+        /// <summary>
+        /// Inserts the specified Entity.
+        /// </summary>
+        /// <returns>Nothing.</returns>
+        /// <param name="entity">The inserted Entity.</param>
+        public void InsertOutsideTransaction(T entity)
+        {
+            IDbCommand cmd = QueryProvider.GetInsertCommand(entity, TableName, TableMapping, false);
             entity.Id = Convert.ToInt32(cmd.ExecuteScalar());
         }
 

@@ -11,6 +11,7 @@ namespace Dook
         public string ConnectionString = string.Empty;
         public IDbConnection Connection;
         public IDbTransaction Transaction;
+        public IDbConnection ConnectionWithoutTransaction;
 
         int? CommandTimeout;
 
@@ -19,17 +20,18 @@ namespace Dook
             DbType = dbType;
             ConnectionString = connectionString;
             Connection = GetConnection();
+            ConnectionWithoutTransaction = GetConnection();
             CommandTimeout = commandTimeout;
         }
 
-        public IDbCommand GetCommand()
+        public IDbCommand GetCommand(bool insideTransaction = true)
         {
             IDbCommand DbCommand = null;
             switch (DbType)
             {
                 case DbType.Sql:
                     DbCommand = new SqlCommand();
-                    DbCommand.Transaction = Transaction;
+                    if (insideTransaction) DbCommand.Transaction = Transaction;
                     break;
                 case DbType.MySql:
                     DbCommand =  new MySqlCommand();
@@ -37,7 +39,7 @@ namespace Dook
                 default:
                     throw new Exception("Unsuported database provider.");
             }
-            DbCommand.Connection = Connection;
+            DbCommand.Connection = insideTransaction ? Connection : ConnectionWithoutTransaction;
             if (CommandTimeout != null) DbCommand.CommandTimeout = (int) CommandTimeout;
             return DbCommand;
         }

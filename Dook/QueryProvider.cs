@@ -74,7 +74,7 @@ namespace Dook
             }
         }
 
-        public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping, params Expression<Func<T,dynamic>>[] updatedProperties) where T : IEntity, new()
+        public IDbCommand GetUpdateCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping, bool insideTransaction, params Expression<Func<T,dynamic>>[] updatedProperties) where T : IEntity, new()
         {
             List<string> updatedProps = new List<string>();
             foreach(Expression<Func<T,dynamic>> e in updatedProperties)
@@ -127,7 +127,7 @@ namespace Dook
             }
             query.Append(us);
             query.Append(" WHERE " + TableMapping["Id"].ColumnName + " = @id;");
-            IDbCommand cmd = DbProvider.GetCommand();
+            IDbCommand cmd = DbProvider.GetCommand(insideTransaction);
             cmd.CommandText = query.ToString();
             //MySqlCommand cmd = new MySqlCommand(query.ToString());
             Type Type = typeof(T);
@@ -143,7 +143,7 @@ namespace Dook
             return cmd;
         }
 
-        public IDbCommand GetInsertCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping) where T : IEntity, new()
+        public IDbCommand GetInsertCommand<T>(T entity, string TableName, Dictionary<string, ColumnInfo> TableMapping, bool insideTransaction = true) where T : IEntity, new()
         {
             StringBuilder query = new StringBuilder();
             if (entity is ITrackDateOfCreation)
@@ -188,7 +188,7 @@ namespace Dook
             query.Append(" VALUES ");
             query.Append(values);
             query.Append("; SELECT @@IDENTITY;");
-            IDbCommand cmd = DbProvider.GetCommand();
+            IDbCommand cmd = DbProvider.GetCommand(insideTransaction);
             cmd.CommandText = query.ToString();
             foreach (string p in TableMapping.Keys)
             {
