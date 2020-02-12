@@ -15,15 +15,11 @@ public static class Mapper
         List<PropertyInfo> properties = new List<PropertyInfo>(); 
         PropertyInfo idPropertyInfo = typeInfo.GetProperty("Id");
         if (idPropertyInfo != null) properties.Add(typeInfo.GetProperty("Id")) ; //TODO: this is because Join reader always assume Id comes first
-        properties.AddRange(typeof(T).GetTypeInfo().GetProperties().Where(p => p.Name != "Id").OrderBy(p => p.Name).ToList());
+        properties.AddRange(typeof(T).GetTypeInfo().GetProperties().Where(p => p.Name != "Id" && !p.CustomAttributes.Any(x => x.AttributeType == typeof(NotMappedAttribute))).OrderBy(p => p.Name).ToList());
         foreach (PropertyInfo p in properties)
         {
-            NotMappedAttribute nm = p.GetCustomAttribute<NotMappedAttribute>();
-            if (nm == null)
-            {
-                ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
-                TableMapping.Add(p.Name, new ColumnInfo { ColumnName = cma != null ? cma.ColumnName : p.Name, ColumnType = p.PropertyType });
-            }
+            ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
+            TableMapping.Add(p.Name, new ColumnInfo { ColumnName = cma != null ? cma.ColumnName : p.Name, ColumnType = p.PropertyType });
         }
         return TableMapping;
     }
@@ -41,17 +37,13 @@ public static class Mapper
         List<PropertyInfo> properties = new List<PropertyInfo>(); 
         PropertyInfo idPropertyInfo = typeInfo.GetProperty("Id");
         if (idPropertyInfo != null) properties.Add(typeInfo.GetProperty("Id")) ; //TODO: this is because Join reader always assume Id comes first
-        properties.AddRange(typeInfo.GetProperties().Where(p => p.Name != "Id").OrderBy(p => p.Name).ToList());
+        properties.AddRange(typeInfo.GetProperties().Where(p => p.Name != "Id" && !p.CustomAttributes.Any(x => x.AttributeType == typeof(NotMappedAttribute))).OrderBy(p => p.Name).ToList());
         foreach (PropertyInfo p in properties)
         {
-            NotMappedAttribute nm = p.GetCustomAttribute<NotMappedAttribute>();
-            if (nm == null)
-            {
-                ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
-                TableAliasAttribute taa = p.GetCustomAttribute<TableAliasAttribute>();
-                if (taa == null) throw new Exception("Table alias must be defined for each mapped attribute.");
-                Mapping.Add(p.Name, cma != null ? $"{taa.Alias}.{cma.ColumnName}" : $"{taa.Alias}.{p.Name}");
-            }
+            ColumnNameAttribute cma = p.GetCustomAttribute<ColumnNameAttribute>();
+            TableAliasAttribute taa = p.GetCustomAttribute<TableAliasAttribute>();
+            if (taa == null) throw new Exception("Table alias must be defined for each mapped attribute.");
+            Mapping.Add(p.Name, cma != null ? $"{taa.Alias}.{cma.ColumnName}" : $"{taa.Alias}.{p.Name}");
         }
         return String.Join(", ", Mapping.Values);
     }
