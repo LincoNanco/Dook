@@ -58,7 +58,19 @@ namespace Dook
         public void Update(T entity, params Expression<Func<T,dynamic>>[] updatedProperties)
         {
             JoinResults[entity.Id] = entity;
-            IDbCommand cmd = QueryProvider.GetUpdateCommand(entity, TableName, TableMapping, updatedProperties);
+            IDbCommand cmd = QueryProvider.GetUpdateCommand(entity, TableName, TableMapping, true, updatedProperties);
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Updates the specified entity.
+        /// </summary>
+        /// <returns>Nothing.</returns>
+        /// <param name="entity">The updated Entity.</param>
+        public void UpdateOutsideTransaction(T entity, params Expression<Func<T,dynamic>>[] updatedProperties)
+        {
+            JoinResults[entity.Id] = entity;
+            IDbCommand cmd = QueryProvider.GetUpdateCommand(entity, TableName, TableMapping, false, updatedProperties);
             cmd.ExecuteNonQuery();
         }
 
@@ -70,6 +82,17 @@ namespace Dook
         public void Insert(T entity)
         {
             IDbCommand cmd = QueryProvider.GetInsertCommand(entity, TableName, TableMapping);
+            entity.Id = Convert.ToInt32(cmd.ExecuteScalar());
+        }
+
+        /// <summary>
+        /// Inserts the specified Entity.
+        /// </summary>
+        /// <returns>Nothing.</returns>
+        /// <param name="entity">The inserted Entity.</param>
+        public void InsertOutsideTransaction(T entity)
+        {
+            IDbCommand cmd = QueryProvider.GetInsertCommand(entity, TableName, TableMapping, false);
             entity.Id = Convert.ToInt32(cmd.ExecuteScalar());
         }
 
@@ -97,6 +120,17 @@ namespace Dook
         }
 
         /// <summary>
+        /// Deletes an <typeparamref name="Entity"/> based on its id.
+        /// </summary>
+        /// <returns>Nothing.</returns>
+        /// <param name="id">The deleted Entity's id.</param>
+        public void DeleteOutsideTransaction(int id)
+        {
+            IDbCommand cmd = QueryProvider.GetDeleteCommand(id, TableName, TableMapping, false);
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
         /// Deletes the specified <typeparamref name="T"/>.
         /// </summary>
         /// <returns>Nothing.</returns>
@@ -104,6 +138,16 @@ namespace Dook
         public void Delete(T entity)
         {
             Delete(entity.Id);
+        }
+
+        /// <summary>
+        /// Deletes the specified <typeparamref name="T"/>.
+        /// </summary>
+        /// <returns>Nothing.</returns>
+        /// <param name="entity">The deleted Entity.</param>
+        public void DeleteOutsideTransaction(T entity)
+        {
+            DeleteOutsideTransaction(entity.Id);
         }
 
         /// <summary>
@@ -124,6 +168,15 @@ namespace Dook
         public void DeleteWhere(Expression<Func<T,bool>> expression)
         {
             IDbCommand cmd = QueryProvider.GetDeleteWhereCommand(expression, TableName);
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Deletes all entities of type <typeparamref name="T"/>
+        /// </summary>
+        public void DeleteWhereOutsideTransaction(Expression<Func<T,bool>> expression)
+        {
+            IDbCommand cmd = QueryProvider.GetDeleteWhereCommand(expression, TableName, false);
             cmd.ExecuteNonQuery();
         }
 

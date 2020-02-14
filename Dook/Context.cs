@@ -23,6 +23,7 @@ namespace Dook
             JoinProvider = new JoinProvider(DbProvider);
             QueryProvider = new QueryProvider(DbProvider);
             DbProvider.Connection.Open();
+            DbProvider.ConnectionWithoutTransaction.Open();
             DbProvider.Transaction = DbProvider.Connection.BeginTransaction();
             Suffix = configuration.Suffix;
         }
@@ -130,6 +131,7 @@ namespace Dook
             DbProvider.Connection.Close();
             DbProvider.Connection.Dispose();
             DbProvider.Transaction.Dispose();
+            DbProvider.ConnectionWithoutTransaction.Dispose();
         }
     }
 }
