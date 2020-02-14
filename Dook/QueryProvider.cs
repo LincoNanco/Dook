@@ -201,24 +201,24 @@ namespace Dook
             return cmd;
         }
 
-        public IDbCommand GetDeleteCommand(int id, string TableName, Dictionary<string, ColumnInfo> TableMapping)
+        public IDbCommand GetDeleteCommand(int id, string TableName, Dictionary<string, ColumnInfo> TableMapping, bool insideTransaction = true)
         {
             string queryText = $"DELETE FROM {TableName} WHERE {TableMapping["Id"].ColumnName} = @id;";
-            IDbCommand cmd = DbProvider.GetCommand();
+            IDbCommand cmd = DbProvider.GetCommand(insideTransaction);
             cmd.CommandText = queryText;
             SetParameter(cmd, "@id", id);
             LogQuery(cmd.CommandText, cmd.Parameters);
             return cmd;
         }
 
-        public IDbCommand GetDeleteWhereCommand<T>(Expression<Func<T,bool>> expression, string TableName)
+        public IDbCommand GetDeleteWhereCommand<T>(Expression<Func<T,bool>> expression, string TableName, bool insideTransaction = true)
         {
             if (expression == null) throw new ArgumentNullException(nameof(expression), "The provided expression cannot be null.");
             SQLPredicate predicate = Translate(Evaluator.PartialEval(expression), true);
             LambdaExpression lambda = (LambdaExpression) expression;//for getting alias
             StringBuilder query = new StringBuilder();
             query.Append($"DELETE FROM {TableName} WHERE {predicate.Sql};");
-            IDbCommand cmd = DbProvider.GetCommand();
+            IDbCommand cmd = DbProvider.GetCommand(insideTransaction);
             cmd.CommandText = query.ToString();
             predicate.SetParameters(cmd);
             LogQuery(cmd.CommandText, cmd.Parameters);

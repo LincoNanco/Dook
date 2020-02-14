@@ -120,6 +120,17 @@ namespace Dook
         }
 
         /// <summary>
+        /// Deletes an <typeparamref name="Entity"/> based on its id.
+        /// </summary>
+        /// <returns>Nothing.</returns>
+        /// <param name="id">The deleted Entity's id.</param>
+        public void DeleteOutsideTransaction(int id)
+        {
+            IDbCommand cmd = QueryProvider.GetDeleteCommand(id, TableName, TableMapping, false);
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
         /// Deletes the specified <typeparamref name="T"/>.
         /// </summary>
         /// <returns>Nothing.</returns>
@@ -127,6 +138,16 @@ namespace Dook
         public void Delete(T entity)
         {
             Delete(entity.Id);
+        }
+
+        /// <summary>
+        /// Deletes the specified <typeparamref name="T"/>.
+        /// </summary>
+        /// <returns>Nothing.</returns>
+        /// <param name="entity">The deleted Entity.</param>
+        public void DeleteOutsideTransaction(T entity)
+        {
+            DeleteOutsideTransaction(entity.Id);
         }
 
         /// <summary>
@@ -147,6 +168,15 @@ namespace Dook
         public void DeleteWhere(Expression<Func<T,bool>> expression)
         {
             IDbCommand cmd = QueryProvider.GetDeleteWhereCommand(expression, TableName);
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Deletes all entities of type <typeparamref name="T"/>
+        /// </summary>
+        public void DeleteWhereOutsideTransaction(Expression<Func<T,bool>> expression)
+        {
+            IDbCommand cmd = QueryProvider.GetDeleteWhereCommand(expression, TableName, false);
             cmd.ExecuteNonQuery();
         }
 
