@@ -141,7 +141,7 @@ namespace Dook.Tests
             string result;
             try
             {
-                IDbCommand cmd = provider.GetUpdateCommand(model, "TestModels", Mapper.GetTableMapping<TestModel>(), true);
+                IDbCommand cmd = provider.GetUpdateCommand(model, "TestModels", Mapper.GetTableMapping<TestModel>());
                 result = cmd.CommandText;
             }
             catch (Exception e)
@@ -200,7 +200,7 @@ namespace Dook.Tests
             string result;
             try
             {
-                IDbCommand cmd = provider.GetUpdateCommand(model, "TestModels", Mapper.GetTableMapping<TestModel>(), true, x => x.BoolProperty, x => x.StringProperty, x => x.DateTimeProperty);
+                IDbCommand cmd = provider.GetUpdateCommand(model, "TestModels", Mapper.GetTableMapping<TestModel>(), x => x.BoolProperty, x => x.StringProperty, x => x.DateTimeProperty);
                 result = cmd.CommandText;
             }
             catch (Exception e)

@@ -14,6 +14,7 @@ namespace Dook
         internal DbType DbType;
         protected DbProvider DbProvider;
         internal string Suffix;
+        private bool DisableImplicitTransactions;
 
         public Context(IDookConfigurationOptions configuration)
         {
@@ -22,9 +23,9 @@ namespace Dook
             DbProvider = new DbProvider(DbType, ConnectionString, configuration.CommandTimeout);
             JoinProvider = new JoinProvider(DbProvider);
             QueryProvider = new QueryProvider(DbProvider);
+            DisableImplicitTransactions = configuration.DisableImplicitTransaction;
             DbProvider.Connection.Open();
-            DbProvider.ConnectionWithoutTransaction.Open();
-            DbProvider.Transaction = DbProvider.Connection.BeginTransaction();
+            if (!DisableImplicitTransactions) DbProvider.Transaction = DbProvider.Connection.BeginTransaction();
             Suffix = configuration.Suffix;
         }
 
@@ -109,8 +110,16 @@ namespace Dook
             }
         }
 
+        /// <summary>
+        /// Tries to commit a transaction to the database. If it fails, rollbacks the current transaction. 
+        /// If transactions are disabled, this method won't do anything.
+        /// </summary>
         public void SaveChanges()
         {
+            if (DisableImplicitTransactions)
+            {
+                return;
+            }
             try
             {
                 DbProvider.Transaction.Commit();
@@ -130,8 +139,7 @@ namespace Dook
         {
             DbProvider.Connection.Close();
             DbProvider.Connection.Dispose();
-            DbProvider.Transaction.Dispose();
-            DbProvider.ConnectionWithoutTransaction.Dispose();
+            if (!DisableImplicitTransactions) DbProvider.Transaction.Dispose();
         }
     }
 }
